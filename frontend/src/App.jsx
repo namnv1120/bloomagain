@@ -1,16 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { staticData } from './data/staticData';
 
+const renderFacilitySvg = (type) => {
+  const commonProps = { width: "100%", height: "130", viewBox: "0 0 240 130", style: { borderRadius: '12px', display: 'block' } };
+  if (type === 'clinic' || type === 'hospital' || type === 'medical') {
+    return (
+      <svg {...commonProps}>
+        <defs>
+          <linearGradient id="medGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#d7f1ea" />
+            <stop offset="100%" stopColor="#bfead8" />
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#medGrad)" />
+        <circle cx="120" cy="65" r="40" fill="rgba(255, 255, 255, 0.4)" />
+        <rect x="105" y="45" width="30" height="40" rx="3" fill="#34a853" opacity="0.15" />
+        <path d="M120 50v30M105 65h30" stroke="#34a853" strokeWidth="8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...commonProps}>
+      <defs>
+        <linearGradient id="sheGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffe1eb" />
+          <stop offset="100%" stopColor="#ffb3c6" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#sheGrad)" />
+      <circle cx="120" cy="65" r="40" fill="rgba(255, 255, 255, 0.4)" />
+      <path d="M120 80s-20-13-20-25a10 10 0 0120-5 10 10 0 0120 5c0 12-20 25-20 25z" fill="#e91e63" />
+    </svg>
+  );
+};
+
 function App() {
   // Navigation & Page State
   const [activePage, setActivePage] = useState('home');
   const [knowledgeCategory, setKnowledgeCategory] = useState('Giáo dục giới tính');
-  const [productCategory, setProductCategory] = useState('Sản phẩm vệ sinh');
+  const [productCategory, setProductCategory] = useState('Sản phẩm giáo dục');
 
   // User Profile / Onboarding State
   const [gender, setGender] = useState(null);
   const [age, setAge] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(true);
+  // Temp selections inside onboarding (not yet confirmed)
+  const [tempGender, setTempGender] = useState(null);
+  const [tempAge, setTempAge] = useState(null);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +60,13 @@ function App() {
   const [chatInput, setChatInput] = useState('');
   const [isBotTyping, setIsBotTyping] = useState(false);
   const chatMessagesEndRef = useRef(null);
+  const fullscreenChatEndRef = useRef(null);
+
+  // Facility/Center filtering and expansion
+  const [healthRegionFilter, setHealthRegionFilter] = useState('Tất cả');
+  const [supportRegionFilter, setSupportRegionFilter] = useState('Tất cả');
+  const [expandedFacility, setExpandedFacility] = useState(null);
+  const [expandedCenter, setExpandedCenter] = useState(null);
 
   // Initialize profile from sessionStorage
   useEffect(() => {
@@ -32,6 +75,8 @@ function App() {
       if (stored && stored.gender && stored.age) {
         setGender(stored.gender);
         setAge(stored.age);
+        setTempGender(stored.gender);
+        setTempAge(stored.age);
         setShowOnboarding(false);
       }
     } catch (err) {
@@ -39,26 +84,40 @@ function App() {
     }
   }, []);
 
-  // Save profile to sessionStorage
+  // Scroll to top on page change
   useEffect(() => {
-    if (gender && age) {
-      sessionStorage.setItem('bloomAgainProfile', JSON.stringify({ gender, age }));
-      setShowOnboarding(false);
-    }
-  }, [gender, age]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activePage]);
 
   // Handle auto scroll for chat messages
   useEffect(() => {
-    if (chatMessagesEndRef.current) {
-      chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatHistory, isBotTyping]);
+    const timer = setTimeout(() => {
+      if (chatMessagesEndRef.current) {
+        chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+      if (fullscreenChatEndRef.current) {
+        fullscreenChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [chatHistory, isBotTyping, isChatOpen, activePage]);
+
+  // Confirm onboarding selection
+  const handleConfirmOnboarding = () => {
+    if (!tempGender || !tempAge) return;
+    setGender(tempGender);
+    setAge(tempAge);
+    sessionStorage.setItem('bloomAgainProfile', JSON.stringify({ gender: tempGender, age: tempAge }));
+    setShowOnboarding(false);
+  };
 
   // Reset profile / onboarding
   const handleResetProfile = () => {
     sessionStorage.removeItem('bloomAgainProfile');
     setGender(null);
     setAge(null);
+    setTempGender(null);
+    setTempAge(null);
     setShowOnboarding(true);
   };
 
@@ -100,7 +159,7 @@ function App() {
     // Search Support Centers
     staticData.supportCenters.forEach(item => {
       if (item.name.toLowerCase().includes(q) || item.address.toLowerCase().includes(q)) {
-        results.push({ type: 'Bảo hộ trẻ em', title: item.name, meta: item.address });
+        results.push({ type: 'Bảo trợ trẻ em', title: item.name, meta: item.address });
       }
     });
 
@@ -137,7 +196,7 @@ function App() {
 
       const data = await response.json();
       setChatHistory(prev => [...prev, { role: 'bot', content: data.reply }]);
-      
+
       // Auto-trigger navigation action if backend returns redirection intent
       if (data.action === 'redirect') {
         if (data.category) {
@@ -158,20 +217,38 @@ function App() {
     }
   };
 
-  // Chat opening initialization
+  // Initialize chat history with greeting when opening
+  const initChat = () => {
+    if (chatHistory.length === 0) {
+      setChatHistory([
+        {
+          role: 'bot',
+          content: 'Xin chào, mình là AI của Bloom Again. Bạn cần giúp gì? (trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ)'
+        }
+      ]);
+    }
+  };
+
+  // Chat opening initialization (floating panel)
   const toggleChatPanel = () => {
     setIsChatOpen(prev => {
       const next = !prev;
-      if (next && chatHistory.length === 0) {
-        setChatHistory([
-          {
-            role: 'bot',
-            content: 'Xin chào, mình là AI của Bloom Again. Bạn cần giúp gì? (trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ)'
-          }
-        ]);
-      }
+      if (next) initChat();
       return next;
     });
+  };
+
+  // Open home page AI chat button (same as clicking FAB)
+  const handleHomeChatOpen = () => {
+    initChat();
+    setIsChatOpen(true);
+  };
+
+  // Go to fullscreen chat page
+  const handleGoFullscreenChat = () => {
+    initChat();
+    setIsChatOpen(false);
+    setActivePage('chat-fullscreen');
   };
 
   // Suggestion Chip handler
@@ -184,7 +261,7 @@ function App() {
   const currentProducts = staticData.productCategories[productCategory];
 
   return (
-    <div>
+    <>
       {/* Onboarding Dialog */}
       {showOnboarding && (
         <div className="onboard" role="dialog" aria-modal="true">
@@ -197,7 +274,13 @@ function App() {
                   <p className="onboard-sub">Dữ liệu chỉ lưu trong phiên bằng sessionStorage và có thể đổi ở chân trang.</p>
                 </div>
                 <div className="status-pill">
-                  {gender && age ? `Đã chọn: ${gender} • ${age}` : 'Chưa chọn đủ thông tin'}
+                  {tempGender && tempAge
+                    ? `Đã chọn: ${tempGender} • ${tempAge}`
+                    : tempGender
+                      ? `Giới tính: ${tempGender} • Chưa chọn độ tuổi`
+                      : tempAge
+                        ? `Chưa chọn giới tính • ${tempAge}`
+                        : 'Chưa chọn đủ thông tin'}
                 </div>
               </div>
 
@@ -207,11 +290,11 @@ function App() {
                   {['Nam', 'Nữ', 'LGBTQ+'].map(g => (
                     <button
                       key={g}
-                      className={`choice ${g === 'Nam' ? 'male' : g === 'Nữ' ? 'female' : 'lgbtq'} ${gender === g ? 'active' : ''}`}
-                      onClick={() => setGender(g)}
+                      className={`choice ${g === 'Nam' ? 'male' : g === 'Nữ' ? 'female' : 'lgbtq'} ${tempGender === g ? 'active' : ''}`}
+                      onClick={() => setTempGender(g)}
                       type="button"
                     >
-                      {g}
+                      {tempGender === g ? '✓ ' : ''}{g}
                     </button>
                   ))}
                 </div>
@@ -223,15 +306,26 @@ function App() {
                   {['13-17 tuổi', '18-24 tuổi'].map(a => (
                     <button
                       key={a}
-                      className={`choice ageChoice ${age === a ? 'active' : ''}`}
-                      onClick={() => setAge(a)}
+                      className={`choice ageChoice ${tempAge === a ? 'active' : ''}`}
+                      onClick={() => setTempAge(a)}
                       type="button"
                     >
-                      {a}
+                      {tempAge === a ? '✓ ' : ''}{a}
                     </button>
                   ))}
                 </div>
               </div>
+
+              <button
+                className={`onboard-confirm-btn ${tempGender && tempAge ? 'ready' : ''}`}
+                onClick={handleConfirmOnboarding}
+                disabled={!tempGender || !tempAge}
+                type="button"
+              >
+                {tempGender && tempAge
+                  ? `Xác nhận — ${tempGender} • ${tempAge} ✓`
+                  : 'Vui lòng chọn đủ giới tính và độ tuổi'}
+              </button>
             </div>
           </div>
         </div>
@@ -244,11 +338,20 @@ function App() {
             <div className="brand-mark">🌸</div>
             <div className="brand-text">
               <strong>Bloom Again</strong>
-              <span>Giáo dục giới tính & tâm sinh lý teen</span>
+              <span>Giáo dục giới tính, sức khoẻ sinh sản &amp; tâm sinh lý teen</span>
             </div>
           </a>
 
           <nav className="top-nav" aria-label="Điều hướng chính">
+            {/* Trang chủ */}
+            <button
+              className={`nav-btn ${activePage === 'home' ? 'active' : ''}`}
+              onClick={() => { setActivePage('home'); setShowSearchResults(false); }}
+              type="button"
+            >
+              Trang chủ
+            </button>
+
             <button
               className={`nav-btn ${activePage === 'knowledge' ? 'active' : ''}`}
               onClick={() => setActivePage('knowledge')}
@@ -284,28 +387,28 @@ function App() {
               </button>
               <div className="dropdown-menu">
                 <button className="dropdown-item" type="button" onClick={() => setActivePage('support')}>
-                  Trung tâm bảo hộ trẻ em
+                  Trung tâm bảo trợ trẻ em
                 </button>
                 <button className="dropdown-item" type="button" onClick={() => setActivePage('health')}>
                   Cơ sở y tế
                 </button>
               </div>
             </div>
-          </nav>
 
-          <form onSubmit={handleSearchSubmit} className="search-box">
-            <input
-              type="search"
-              placeholder="Tìm bài viết, sản phẩm, giải pháp..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit">Tìm</button>
-          </form>
+            {/* Về chúng tôi */}
+            <button
+              className={`nav-btn ${activePage === 'about' ? 'active' : ''}`}
+              onClick={() => setActivePage('about')}
+              type="button"
+            >
+              Về chúng tôi
+            </button>
+          </nav>
         </div>
       </header>
 
       {/* Main Pages */}
+      {/* Shell */}
       <main className="shell">
         {/* HOME PAGE */}
         {activePage === 'home' && (
@@ -319,6 +422,10 @@ function App() {
                 <div className="hero-actions">
                   <button className="btn primary" onClick={() => setActivePage('knowledge')} type="button">Mở Kiến thức</button>
                   <button className="btn secondary" onClick={() => setActivePage('products')} type="button">Xem Sản phẩm</button>
+                  <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
+                    <span className="ai-chat-icon">🤖</span>
+                    Chat với AI
+                  </button>
                 </div>
               </div>
               <div className="mascot-wrap">
@@ -329,6 +436,24 @@ function App() {
                 </div>
               </div>
             </div>
+
+            <section className="section home-search-section">
+              <div className="search-container">
+                <h2>Bạn muốn tìm kiếm điều gì hôm nay?</h2>
+                <p>Khám phá kiến thức giáo dục giới tính, sản phẩm, và các cơ sở hỗ trợ y tế, tâm lý uy tín.</p>
+                <form onSubmit={handleSearchSubmit} className="home-search-box">
+                  <input
+                    type="search"
+                    placeholder="Nhập từ khóa tìm kiếm (ví dụ: tuổi dậy thì, bao cao su, cơ sở y tế...)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button type="submit">
+                    <span className="search-btn-icon">🔍</span> Tìm kiếm
+                  </button>
+                </form>
+              </div>
+            </section>
 
             <section className="section">
               <div className="section-head">
@@ -460,22 +585,249 @@ function App() {
         )}
 
         {/* HEALTH PAGE */}
-        {activePage === 'health' && (
+        {activePage === 'health' && (() => {
+          const filteredFacilities = staticData.healthFacilities.filter(
+            item => healthRegionFilter === 'Tất cả' || item.region === healthRegionFilter
+          );
+          const selectedItem = filteredFacilities.find(f => f.name === expandedFacility);
+
+          return (
+            <div className="page active">
+              <section className="section">
+                <div className="section-head">
+                  <div>
+                    <h2>Cơ sở y tế thân thiện với teen</h2>
+                    <p>Danh sách minh họa để người dùng tìm nơi hỗ trợ an toàn.</p>
+                  </div>
+                </div>
+
+                {/* Region Selector */}
+                <div className="filter-chips">
+                  {['Tất cả', 'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'].map((r) => (
+                    <button
+                      key={r}
+                      className={`filter-chip ${healthRegionFilter === r ? 'active' : ''}`}
+                      onClick={() => {
+                        setHealthRegionFilter(r);
+                        setExpandedFacility(null);
+                      }}
+                      type="button"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="facilities-grid">
+                  {filteredFacilities.map((item, idx) => {
+                    const isSelected = expandedFacility === item.name;
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`facility-item clickable ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setExpandedFacility(isSelected ? null : item.name)}
+                      >
+                        <div className="facility-item-header">
+                          <div className="facility-title-area">
+                            <strong>{item.name}</strong>
+                            <span className="facility-region">{item.region}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Separate Details Row Below Grid */}
+                {selectedItem && (
+                  <div className="facility-detail-panel">
+                    <div className="facility-detail-panel-header">
+                      <h3>Chi tiết cơ sở: {selectedItem.name}</h3>
+                      <button className="detail-close-btn" onClick={() => setExpandedFacility(null)}>×</button>
+                    </div>
+                    <div className="facility-details-grid">
+                      <div className="facility-image">
+                        {renderFacilitySvg(selectedItem.svgType)}
+                      </div>
+                      <div className="facility-info-text">
+                        <p><strong>⏰ Giờ làm việc:</strong> {selectedItem.workingHours}</p>
+                        <p><strong>📞 Điện thoại:</strong> {selectedItem.phone}</p>
+                        <p>
+                          <strong>📍 Địa chỉ:</strong>{' '}
+                          <a 
+                            href={selectedItem.gmaps} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="gmaps-link"
+                          >
+                            {selectedItem.address} ↗
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+          );
+        })()}
+
+        {/* SUPPORT PAGE */}
+        {activePage === 'support' && (() => {
+          const filteredCenters = staticData.supportCenters.filter(
+            item => supportRegionFilter === 'Tất cả' || item.region === supportRegionFilter
+          );
+          const selectedItem = filteredCenters.find(c => c.name === expandedCenter);
+
+          return (
+            <div className="page active">
+              <section className="section">
+                <div className="section-head">
+                  <div>
+                    <h2>Trung tâm bảo trợ trẻ em</h2>
+                    <p>Danh sách trung tâm hỗ trợ và số hotline tham khảo.</p>
+                  </div>
+                </div>
+
+                {/* Region Selector */}
+                <div className="filter-chips">
+                  {['Tất cả', 'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'].map((r) => (
+                    <button
+                      key={r}
+                      className={`filter-chip ${supportRegionFilter === r ? 'active' : ''}`}
+                      onClick={() => {
+                        setSupportRegionFilter(r);
+                        setExpandedCenter(null);
+                      }}
+                      type="button"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="facilities-grid">
+                  {filteredCenters.map((item, idx) => {
+                    const isSelected = expandedCenter === item.name;
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`facility-item clickable ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setExpandedCenter(isSelected ? null : item.name)}
+                      >
+                        <div className="facility-item-header">
+                          <div className="facility-title-area">
+                            <strong>{item.name}</strong>
+                            <span className="facility-region">{item.region}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Separate Details Row Below Grid */}
+                {selectedItem && (
+                  <div className="facility-detail-panel">
+                    <div className="facility-detail-panel-header">
+                      <h3>Chi tiết trung tâm: {selectedItem.name}</h3>
+                      <button className="detail-close-btn" onClick={() => setExpandedCenter(null)}>×</button>
+                    </div>
+                    <div className="facility-details-grid">
+                      <div className="facility-image">
+                        {renderFacilitySvg(selectedItem.svgType)}
+                      </div>
+                      <div className="facility-info-text">
+                        <p><strong>⏰ Giờ làm việc:</strong> {selectedItem.workingHours}</p>
+                        <p><strong>📞 Hotline:</strong> <span className="hotline-highlight">{selectedItem.hotline}</span></p>
+                        <p>
+                          <strong>📍 Địa chỉ:</strong>{' '}
+                          <a 
+                            href={selectedItem.gmaps} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="gmaps-link"
+                          >
+                            {selectedItem.address} ↗
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+          );
+        })()}
+
+        {/* ABOUT PAGE */}
+        {activePage === 'about' && (
           <div className="page active">
-            <section className="section">
+            <div className="about-hero">
+              <div className="about-hero-text">
+                <div className="eyebrow">🌸 Câu chuyện của chúng tôi</div>
+                <h1 className="about-title">Về Bloom Again</h1>
+                <p className="about-subtitle">Chúng tôi tin rằng mọi bạn trẻ đều xứng đáng được tiếp cận kiến thức đúng đắn về giới tính và sức khỏe tâm lý, trong một không gian an toàn, thân thiện và không phán xét.</p>
+              </div>
+              <div className="about-badge-wrap">
+                <div className="about-badge">🌼</div>
+              </div>
+            </div>
+
+            <div className="about-grid">
+              <div className="about-card">
+                <div className="about-card-icon">🎯</div>
+                <h3>Sứ mệnh</h3>
+                <p>Cung cấp nền tảng giáo dục giới tính toàn diện, giúp thanh thiếu niên Việt Nam hiểu rõ cơ thể, cảm xúc và quyền của bản thân một cách khoa học và gần gũi.</p>
+              </div>
+              <div className="about-card">
+                <div className="about-card-icon">👁️</div>
+                <h3>Tầm nhìn</h3>
+                <p>Xây dựng thế hệ trẻ Việt tự tin, hiểu biết và có trách nhiệm với bản thân cũng như người xung quanh trong các mối quan hệ và sức khỏe cá nhân.</p>
+              </div>
+              <div className="about-card">
+                <div className="about-card-icon">💡</div>
+                <h3>Giá trị cốt lõi</h3>
+                <p>An toàn, bảo mật, không phán xét. Mọi thông tin đều được kiểm duyệt bởi chuyên gia y tế và tâm lý học có chứng chỉ.</p>
+              </div>
+            </div>
+
+            <section className="section about-team-section">
               <div className="section-head">
                 <div>
-                  <h2>Cơ sở y tế thân thiện với teen</h2>
-                  <p>Danh sách minh họa để người dùng tìm nơi hỗ trợ an toàn.</p>
+                  <h2>Đội ngũ sáng lập</h2>
+                  <p>Những người đã xây dựng Bloom Again với tâm huyết vì thế hệ trẻ.</p>
                 </div>
               </div>
-              <div className="facilities-grid">
-                {staticData.healthFacilities.map((item, idx) => (
-                  <div key={idx} className="facility-item">
-                    <strong>{item.name}</strong>
-                    <span>{item.address}</span><br />
-                    <span>Điện thoại: {item.phone}</span><br />
-                    <span>{item.note}</span>
+              <div className="team-grid">
+                {[
+                  { name: 'Nguyễn Minh Anh', role: 'Nhà sáng lập & Giám đốc điều hành', emoji: '👩‍💼', desc: 'Chuyên gia tâm lý học lâm sàng với 8 năm kinh nghiệm tư vấn cho thanh thiếu niên.' },
+                  { name: 'Trần Bảo Long', role: 'Giám đốc Y tế', emoji: '👨‍⚕️', desc: 'Bác sĩ chuyên khoa sản phụ khoa, 10 năm kinh nghiệm giáo dục sức khỏe sinh sản.' },
+                  { name: 'Lê Thị Hương', role: 'Trưởng phòng Nội dung', emoji: '👩‍🏫', desc: 'Giáo viên và nhà văn, chuyên viết nội dung giáo dục phù hợp với lứa tuổi teen.' },
+                ].map((member, idx) => (
+                  <div key={idx} className="team-card">
+                    <div className="team-avatar">{member.emoji}</div>
+                    <div className="team-info">
+                      <strong>{member.name}</strong>
+                      <span className="team-role">{member.role}</span>
+                      <p>{member.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="section about-stats-section">
+              <div className="stats-grid">
+                {[
+                  { num: '10,000+', label: 'Người dùng tin tưởng' },
+                  { num: '150+', label: 'Bài viết chuyên sâu' },
+                  { num: '24/7', label: 'AI hỗ trợ liên tục' },
+                  { num: '100%', label: 'Miễn phí & Ẩn danh' },
+                ].map((stat, idx) => (
+                  <div key={idx} className="stat-item">
+                    <span className="stat-num">{stat.num}</span>
+                    <span className="stat-label">{stat.label}</span>
                   </div>
                 ))}
               </div>
@@ -483,75 +835,126 @@ function App() {
           </div>
         )}
 
-        {/* SUPPORT PAGE */}
-        {activePage === 'support' && (
-          <div className="page active">
-            <section className="section">
-              <div className="section-head">
-                <div>
-                  <h2>Trung tâm bảo hộ trẻ em</h2>
-                  <p>Danh sách trung tâm hỗ trợ và số hotline tham khảo.</p>
+        {/* FULLSCREEN CHAT PAGE */}
+        {activePage === 'chat-fullscreen' && (
+          <div className="page active fullscreen-chat-page">
+            <div className="fullscreen-chat-container">
+              <div className="fullscreen-chat-header">
+                <button
+                  className="fs-back-btn"
+                  onClick={() => setActivePage('home')}
+                  type="button"
+                  aria-label="Quay lại trang chủ"
+                >
+                  ← Quay lại
+                </button>
+                <div className="fs-chat-title">
+                  <div>
+                    <strong>AI của Bloom Again</strong>
+                    <span>Trấn an tâm lý • Tư vấn sản phẩm • Kiến thức giới tính • Tìm cơ sở y tế</span>
+                  </div>
+                </div>
+                <div className="fs-status">
+                  <span className="fs-online-dot"></span>
+                  Đang hoạt động
                 </div>
               </div>
-              <div className="facilities-grid">
-                {staticData.supportCenters.map((item, idx) => (
-                  <div key={idx} className="facility-item">
-                    <strong>{item.name}</strong>
-                    <span>{item.address}</span><br />
-                    <span>Hotline: {item.hotline}</span>
+
+              <div className="fullscreen-chat-messages">
+                {chatHistory.map((msg, idx) => (
+                  <div key={idx} className={`msg ${msg.role === 'user' ? 'user' : 'bot'}`}>
+                    <div className="msg-content">{msg.content}</div>
                   </div>
                 ))}
+                {isBotTyping && (
+                  <div className="msg bot">
+                    <div className="msg-content typing-indicator">
+                      <span></span><span></span><span></span>
+                    </div>
+                  </div>
+                )}
+                <div ref={fullscreenChatEndRef} />
               </div>
-            </section>
+
+              <form className="fullscreen-chat-input" onSubmit={handleChatSubmit}>
+                <input
+                  type="text"
+                  placeholder="Nhập điều bạn đang quan tâm..."
+                  autoComplete="off"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  id="fullscreenChatInput"
+                />
+                <button className="chat-send" type="submit" id="fullscreenChatSend">Gửi ✈</button>
+              </form>
+            </div>
           </div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="site-footer">
-        <div className="shell footer-inner">
-          <div>Bloom Again • Giáo dục giới tính kết hợp tâm sinh lý</div>
-          <button className="link-reset" onClick={handleResetProfile} type="button">Đổi lựa chọn onboarding</button>
-        </div>
-      </footer>
+      {activePage !== 'chat-fullscreen' && (
+        <footer className="site-footer">
+          <div className="shell footer-inner">
+            <div>Bloom Again • Giáo dục giới tính kết hợp tâm sinh lý và sức khoẻ sinh sản</div>
+            <button className="link-reset" onClick={handleResetProfile} type="button">Đổi lựa chọn onboarding</button>
+          </div>
+        </footer>
+      )}
 
-      {/* Chat FAB */}
-      <button className="chat-fab" onClick={toggleChatPanel} aria-label="Mở chat AI">💬</button>
+      {/* Chat FAB - hidden on fullscreen chat page */}
+      {activePage !== 'chat-fullscreen' && (
+        <button className="chat-fab" onClick={toggleChatPanel} aria-label="Mở chat AI">💬</button>
+      )}
 
       {/* Chat Panel */}
-      <section className={`chat-panel ${isChatOpen ? 'open' : ''}`} aria-label="Chat AI Bloom Again">
-        <div className="chat-header">
-          <div className="chat-header-main">
-            <strong>AI của Bloom Again</strong>
-            <span>Trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ.</span>
-          </div>
-          <button className="chat-close" onClick={toggleChatPanel} aria-label="Đóng chat" type="button">×</button>
-        </div>
-
-        <div className="chat-messages">
-          {chatHistory.map((msg, idx) => (
-            <div key={idx} className={`msg ${msg.role === 'user' ? 'user' : 'bot'}`}>
-              {msg.content}
+      {activePage !== 'chat-fullscreen' && (
+        <section className={`chat-panel ${isChatOpen ? 'open' : ''}`} aria-label="Chat AI Bloom Again">
+          <div className="chat-header">
+            <div className="chat-header-main">
+              <strong>AI của Bloom Again</strong>
+              <span>Trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ.</span>
             </div>
-          ))}
-          {isBotTyping && (
-            <div className="msg bot">Đang trả lời...</div>
-          )}
-          <div ref={chatMessagesEndRef} />
-        </div>
+            <div className="chat-header-actions">
+              <button
+                className="chat-maximize"
+                onClick={handleGoFullscreenChat}
+                aria-label="Phóng toàn màn hình"
+                title="Mở chat toàn màn hình"
+                type="button"
+                id="chatMaximizeBtn"
+              >
+                ⛶
+              </button>
+              <button className="chat-close" onClick={toggleChatPanel} aria-label="Đóng chat" type="button">×</button>
+            </div>
+          </div>
 
-        <form className="chat-input" onSubmit={handleChatSubmit}>
-          <input
-            type="text"
-            placeholder="Nhập điều bạn đang quan tâm..."
-            autoComplete="off"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-          />
-          <button className="chat-send" type="submit">Gửi</button>
-        </form>
-      </section>
-    </div>
+          <div className="chat-messages">
+            {chatHistory.map((msg, idx) => (
+              <div key={idx} className={`msg ${msg.role === 'user' ? 'user' : 'bot'}`}>
+                {msg.content}
+              </div>
+            ))}
+            {isBotTyping && (
+              <div className="msg bot">Đang trả lời...</div>
+            )}
+            <div ref={chatMessagesEndRef} />
+          </div>
+
+          <form className="chat-input" onSubmit={handleChatSubmit}>
+            <input
+              type="text"
+              placeholder="Nhập điều bạn đang quan tâm..."
+              autoComplete="off"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+            />
+            <button className="chat-send" type="submit">Gửi</button>
+          </form>
+        </section>
+      )}
+    </>
   );
 }
 

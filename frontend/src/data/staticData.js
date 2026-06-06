@@ -96,6 +96,11 @@ export const staticData = {
     }
   },
   productCategories: {
+    'Giáo dục': [
+      { name: 'Sổ tay giới tính tuổi teen', price: '129.000đ', desc: 'Kiến thức giới tính khoa học, ngôn ngữ gần gũi phù hợp lứa tuổi 13–24.', link: '#' },
+      { name: 'Bộ thẻ tình huống an toàn', price: '89.000đ', desc: 'Giúp teen nhận biết ranh giới và xử lý tình huống thực tế qua thẻ bài.', link: '#' },
+      { name: 'Nhật ký cảm xúc & tự khám phá', price: '75.000đ', desc: 'Sổ tay hướng dẫn viết nhật ký cảm xúc, khám phá bản thân mỗi ngày.', link: '#' }
+    ],
     'Sản phẩm vệ sinh': [
       { name: 'Dung dịch vệ sinh dịu nhẹ', price: '89.000đ', desc: 'pH cân bằng, phù hợp dùng hằng ngày.', link: '#' },
       { name: 'Khăn ướt vệ sinh không cồn', price: '49.000đ', desc: 'Tiện lợi khi đi học hoặc đi xa.', link: '#' },
@@ -113,13 +118,64 @@ export const staticData = {
     ]
   },
   healthFacilities: [
-    { name: 'Phòng khám Sức khỏe Tuổi Trẻ An Tâm', address: '128 Nguyễn Thị Minh Khai, Quận 3, TP.HCM', phone: '028 39 88 1122', note: 'Thân thiện với teen' },
-    { name: 'Trung tâm Y khoa Blossom Care', address: '56 Lý Thường Kiệt, Cầu Giấy, Hà Nội', phone: '024 66 29 7788', note: 'Thân thiện với teen' },
-    { name: 'Phòng khám Dịch vụ An Toàn Xanh', address: '19 Pasteur, Hải Châu, Đà Nẵng', phone: '0236 37 22 911', note: 'Thân thiện với teen' }
+    {
+      name: 'Phòng khám Sức khỏe Tuổi Trẻ An Tâm',
+      address: '128 Nguyễn Thị Minh Khai, Quận 3, TP.HCM',
+      phone: '028 39 88 1122',
+      note: 'Thân thiện với teen',
+      region: 'TP. Hồ Chí Minh',
+      workingHours: '08:00 - 18:00 (Thứ 2 - Thứ Bảy)',
+      gmaps: 'https://www.google.com/maps/dir/?api=1&destination=Phòng+khám+Sức+khỏe+Tuổi+Trẻ+An+Tâm+128+Nguyễn+Thị+Minh+Khai+TPHCM',
+      svgType: 'clinic'
+    },
+    {
+      name: 'Trung tâm Y khoa Blossom Care',
+      address: '56 Lý Thường Kiệt, Cầu Giấy, Hà Nội',
+      phone: '024 66 29 7788',
+      note: 'Thân thiện với teen',
+      region: 'Hà Nội',
+      workingHours: '08:00 - 20:00 (Tất cả các ngày)',
+      gmaps: 'https://www.google.com/maps/dir/?api=1&destination=Trung+tâm+Y+khoa+Blossom+Care+56+Lý+Thường+Kiệt+Cầu+Giấy+Hà+Nội',
+      svgType: 'hospital'
+    },
+    {
+      name: 'Phòng khám Dịch vụ An Toàn Xanh',
+      address: '19 Pasteur, Hải Châu, Đà Nẵng',
+      phone: '0236 37 22 911',
+      note: 'Thân thiện với teen',
+      region: 'Đà Nẵng',
+      workingHours: '07:30 - 17:00 (Thứ 2 - Thứ Sáu)',
+      gmaps: 'https://www.google.com/maps/dir/?api=1&destination=Phòng+khám+Dịch+vụ+An+Toàn+Xanh+19+Pasteur+Hải+Châu+Đà+Nẵng',
+      svgType: 'medical'
+    }
   ],
   supportCenters: [
-    { name: 'Trung tâm Bảo trợ Hoa Nắng', address: '77 Trần Hưng Đạo, Quận 1, TP.HCM', hotline: '1800 1111' },
-    { name: 'Nhà hỗ trợ Trẻ Em Bình Yên', address: '12 Hoàng Diệu, Ba Đình, Hà Nội', hotline: '1800 2222' },
-    { name: 'Mái ấm Tuổi Mới', address: '45 Lê Duẩn, Thanh Khê, Đà Nẵng', hotline: '1800 3333' }
+    {
+      name: 'Trung tâm Bảo trợ Hoa Nắng',
+      address: '77 Trần Hưng Đạo, Quận 1, TP.HCM',
+      hotline: '1800 1111',
+      region: 'TP. Hồ Chí Minh',
+      workingHours: 'Hỗ trợ 24/7 (Đường dây nóng miễn phí)',
+      gmaps: 'https://www.google.com/maps/dir/?api=1&destination=Trung+tâm+Bảo+trợ+Hoa+Nắng+77+Trần+Hưng+Đạo+Quận+1+TPHCM',
+      svgType: 'shelter'
+    },
+    {
+      name: 'Nhà hỗ trợ Trẻ Em Bình Yên',
+      address: '12 Hoàng Diệu, Ba Đình, Hà Nội',
+      hotline: '1800 2222',
+      region: 'Hà Nội',
+      workingHours: 'Hỗ trợ 24/7 (Đường dây nóng miễn phí)',
+      gmaps: 'https://www.google.com/maps/dir/?api=1&destination=Nhà+hỗ+trợ+Trẻ+Em+Bình+Yên+12+Hoàng+Diệu+Ba+Đình+Hà+Nội',
+      svgType: 'peace'
+    },
+    {
+      name: 'Mái ấm Tuổi Mới',
+      address: '45 Lê Duẩn, Thanh Khê, Đà Nẵng',
+      hotline: '1800 3333',
+      region: 'Đà Nẵng',
+      workingHours: '08:00 - 21:00 (Hàng ngày)',
+      gmaps: 'https://www.google.com/maps/dir/?api=1&destination=Mái+ấm+Tuổi+Mới+45+Lê+Duẩn+Thanh+Khê+Đà+Nẵng',
+      svgType: 'shelter_alt'
+    }
   ]
 };
