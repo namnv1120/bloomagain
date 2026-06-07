@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { staticData } from './data/staticData';
+import { useAppData, fetchSuggestions } from './hooks/useAppData';
+import { staticData } from './data/staticData'; // fallback
 
 const renderFacilitySvg = (type) => {
   const commonProps = { width: "100%", height: "130", viewBox: "0 0 240 130", style: { borderRadius: '12px', display: 'block' } };
@@ -68,6 +69,16 @@ function App() {
   const [expandedFacility, setExpandedFacility] = useState(null);
   const [expandedCenter, setExpandedCenter] = useState(null);
 
+  // API data
+  const { knowledge: apiKnowledge, productCategories: apiProducts, healthFacilities: apiFacilities, supportCenters: apiCenters, loading: dataLoading } = useAppData();
+  const knowledge = apiKnowledge || staticData.knowledge;
+  const productCategoriesData = apiProducts || staticData.productCategories;
+  const healthFacilitiesData = apiFacilities || staticData.healthFacilities;
+  const supportCentersData = apiCenters || staticData.supportCenters;
+
+  // Suggestions state (gender × age)
+  const [suggestions, setSuggestions] = useState([]);
+
   // Initialize profile from sessionStorage
   useEffect(() => {
     try {
@@ -83,6 +94,15 @@ function App() {
       console.warn('Unable to read session storage', err);
     }
   }, []);
+
+  // Fetch suggestions whenever gender or age changes
+  useEffect(() => {
+    if (gender && age) {
+      fetchSuggestions(gender, age).then(setSuggestions);
+    } else {
+      setSuggestions([]);
+    }
+  }, [gender, age]);
 
   // Scroll to top on page change
   useEffect(() => {
@@ -109,6 +129,7 @@ function App() {
     setAge(tempAge);
     sessionStorage.setItem('bloomAgainProfile', JSON.stringify({ gender: tempGender, age: tempAge }));
     setShowOnboarding(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Reset profile / onboarding
@@ -251,14 +272,17 @@ function App() {
     setActivePage('chat-fullscreen');
   };
 
-  // Suggestion Chip handler
-  const handleSuggestionClick = (suggestion) => {
-    alert(`Mở bài viết minh họa: ${suggestion}`);
+  // Suggestion Chip handler — navigate to knowledge page with correct category
+  const handleSuggestionClick = (item) => {
+    const cat = typeof item === 'string' ? item : item.category;
+    if (cat && knowledge && knowledge[cat]) {
+      setKnowledgeCategory(cat);
+      setActivePage('knowledge');
+    }
   };
 
-  const suggestions = gender ? staticData.suggestions[gender] : [];
-  const currentKnowledge = staticData.knowledge[knowledgeCategory];
-  const currentProducts = staticData.productCategories[productCategory];
+  const currentKnowledge = knowledge ? knowledge[knowledgeCategory] : null;
+  const currentProducts = productCategoriesData ? productCategoriesData[productCategory] : null;
 
   return (
     <>
@@ -303,7 +327,7 @@ function App() {
               <div className="question">
                 <h3>Độ tuổi</h3>
                 <div className="choice-grid age">
-                  {['13-17 tuổi', '18-24 tuổi'].map(a => (
+                  {['13-17 tuổi', '18-24 tuổi', '25-32 tuổi', '33-40 tuổi'].map(a => (
                     <button
                       key={a}
                       className={`choice ageChoice ${tempAge === a ? 'active' : ''}`}
@@ -437,6 +461,27 @@ function App() {
               </div>
             </div>
 
+            <section className="section">
+              <div className="section-head">
+                <div>
+                  <h2>Gợi ý vấn đề theo lựa chọn của bạn</h2>
+                  <p>{gender ? `Gợi ý nhanh cho ${gender}${age ? ` • ${age}` : ''}:` : 'Chọn giới tính và độ tuổi để nhận gợi ý phù hợp.'}</p>
+                </div>
+              </div>
+              <div className="chips">
+                {suggestions.length > 0 ? (
+                  suggestions.map((item, idx) => (
+                    <button key={idx} className="chip" onClick={() => handleSuggestionClick(item)}>
+                      {item.icon && <span style={{ marginRight: '6px' }}>{item.icon}</span>}
+                      {item.label || item}
+                    </button>
+                  ))
+                ) : (
+                  <div className="notice">Hãy đổi lựa chọn ở footer để nhận gợi ý phù hợp.</div>
+                )}
+              </div>
+            </section>
+
             <section className="section home-search-section">
               <div className="search-container">
                 <h2>Bạn muốn tìm kiếm điều gì hôm nay?</h2>
@@ -452,26 +497,6 @@ function App() {
                     <span className="search-btn-icon">🔍</span> Tìm kiếm
                   </button>
                 </form>
-              </div>
-            </section>
-
-            <section className="section">
-              <div className="section-head">
-                <div>
-                  <h2>Gợi ý vấn đề theo lựa chọn của bạn</h2>
-                  <p>{gender ? `Gợi ý nhanh cho ${gender}${age ? ` • ${age}` : ''}:` : 'Chọn giới tính và độ tuổi để nhận gợi ý phù hợp.'}</p>
-                </div>
-              </div>
-              <div className="chips">
-                {suggestions.length > 0 ? (
-                  suggestions.map((item, idx) => (
-                    <button key={idx} className="chip" onClick={() => handleSuggestionClick(item)}>
-                      {item}
-                    </button>
-                  ))
-                ) : (
-                  <div className="notice">Hãy đổi lựa chọn ở footer để nhận gợi ý phù hợp.</div>
-                )}
               </div>
             </section>
 
@@ -511,7 +536,7 @@ function App() {
                 </div>
               </div>
               <div className="chips">
-                {Object.keys(staticData.knowledge).map(name => (
+                {Object.keys(knowledge).map(name => (
                   <button
                     key={name}
                     className={`chip ${name === knowledgeCategory ? 'active' : ''}`}
@@ -523,7 +548,7 @@ function App() {
               </div>
               <div className="grid-2 mtop">
                 <div className="articles-grid">
-                  {currentKnowledge.articles.map((article, idx) => (
+                  {(currentKnowledge?.articles || []).map((article, idx) => (
                     <article key={idx} className="card">
                       <div className="img-placeholder" style={{ height: '140px', background: '#f8ece6', display: 'grid', placeItems: 'center', color: '#b55139', fontWeight: 600 }}>Ảnh bài viết</div>
                       <div className="card-body">
@@ -536,14 +561,14 @@ function App() {
                 <aside className="section-soft">
                   <h3>Gợi ý sản phẩm</h3>
                   <div className="product-list">
-                    {currentKnowledge.products.map((product, idx) => (
+                    {(currentKnowledge?.products || []).map((product, idx) => (
                       <div key={idx} className="product-item">
                         <strong>{product.name}</strong>
                         <span>Giá: {product.price}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="notice">{currentKnowledge.note}</p>
+                  <p className="notice">{currentKnowledge?.note}</p>
                 </aside>
               </div>
             </section>
@@ -561,7 +586,7 @@ function App() {
                 </div>
               </div>
               <div className="chips">
-                {Object.keys(staticData.productCategories).map(name => (
+                {Object.keys(productCategoriesData || {}).map(name => (
                   <button
                     key={name}
                     className={`chip ${name === productCategory ? 'active' : ''}`}
@@ -572,11 +597,16 @@ function App() {
                 ))}
               </div>
               <div className="product-grid">
-                {currentProducts.map((product, idx) => (
+                {(currentProducts || []).map((product, idx) => (
                   <div key={idx} className="product-item">
                     <strong>{product.name}</strong>
-                    <span>{product.desc}</span><br />
-                    <span>Giá: {product.price}</span>
+                    <span>{product.desc}</span>
+                    <div className="product-item-footer">
+                      <span className="product-price">Giá: {product.price}</span>
+                      <a href={product.link || '#'} target="_blank" rel="noopener noreferrer" className="product-link-btn">
+                        Xem chi tiết ↗
+                      </a>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -586,7 +616,7 @@ function App() {
 
         {/* HEALTH PAGE */}
         {activePage === 'health' && (() => {
-          const filteredFacilities = staticData.healthFacilities.filter(
+          const filteredFacilities = (healthFacilitiesData || []).filter(
             item => healthRegionFilter === 'Tất cả' || item.region === healthRegionFilter
           );
           const selectedItem = filteredFacilities.find(f => f.name === expandedFacility);
@@ -632,6 +662,9 @@ function App() {
                             <strong>{item.name}</strong>
                             <span className="facility-region">{item.region}</span>
                           </div>
+                          <div style={{ color: 'var(--text-light)', fontSize: '0.85rem', marginTop: 6 }}>
+                            ⏰ {item.workingHours}
+                          </div>
                         </div>
                       </div>
                     );
@@ -674,7 +707,7 @@ function App() {
 
         {/* SUPPORT PAGE */}
         {activePage === 'support' && (() => {
-          const filteredCenters = staticData.supportCenters.filter(
+          const filteredCenters = (supportCentersData || []).filter(
             item => supportRegionFilter === 'Tất cả' || item.region === supportRegionFilter
           );
           const selectedItem = filteredCenters.find(c => c.name === expandedCenter);
@@ -719,6 +752,9 @@ function App() {
                           <div className="facility-title-area">
                             <strong>{item.name}</strong>
                             <span className="facility-region">{item.region}</span>
+                          </div>
+                          <div style={{ color: 'var(--text-light)', fontSize: '0.85rem', marginTop: 6 }}>
+                            ⏰ {item.workingHours}
                           </div>
                         </div>
                       </div>

@@ -96,7 +96,7 @@ export const staticData = {
     }
   },
   productCategories: {
-    'Giáo dục': [
+    'Sản phẩm giáo dục': [
       { name: 'Sổ tay giới tính tuổi teen', price: '129.000đ', desc: 'Kiến thức giới tính khoa học, ngôn ngữ gần gũi phù hợp lứa tuổi 13–24.', link: '#' },
       { name: 'Bộ thẻ tình huống an toàn', price: '89.000đ', desc: 'Giúp teen nhận biết ranh giới và xử lý tình huống thực tế qua thẻ bài.', link: '#' },
       { name: 'Nhật ký cảm xúc & tự khám phá', price: '75.000đ', desc: 'Sổ tay hướng dẫn viết nhật ký cảm xúc, khám phá bản thân mỗi ngày.', link: '#' }
