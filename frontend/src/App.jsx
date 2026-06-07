@@ -1,53 +1,68 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAppData, fetchSuggestions } from './hooks/useAppData';
+import { useAppData, fetchSuggestions, API_BASE } from './hooks/useAppData';
 import { staticData } from './data/staticData'; // fallback
+import { useLocation } from './hooks/useLocation';
 
-const renderFacilitySvg = (type) => {
-  const commonProps = { width: "100%", height: "130", viewBox: "0 0 240 130", style: { borderRadius: '12px', display: 'block' } };
-  if (type === 'clinic' || type === 'hospital' || type === 'medical') {
-    return (
-      <svg {...commonProps}>
-        <defs>
-          <linearGradient id="medGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#d7f1ea" />
-            <stop offset="100%" stopColor="#bfead8" />
-          </linearGradient>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#medGrad)" />
-        <circle cx="120" cy="65" r="40" fill="rgba(255, 255, 255, 0.4)" />
-        <rect x="105" y="45" width="30" height="40" rx="3" fill="#34a853" opacity="0.15" />
-        <path d="M120 50v30M105 65h30" stroke="#34a853" strokeWidth="8" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...commonProps}>
-      <defs>
-        <linearGradient id="sheGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ffe1eb" />
-          <stop offset="100%" stopColor="#ffb3c6" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#sheGrad)" />
-      <circle cx="120" cy="65" r="40" fill="rgba(255, 255, 255, 0.4)" />
-      <path d="M120 80s-20-13-20-25a10 10 0 0120-5 10 10 0 0120 5c0 12-20 25-20 25z" fill="#e91e63" />
-    </svg>
-  );
-};
+// Import Page Components
+import Home from './pages/Home';
+import Knowledge from './pages/Knowledge';
+import Products from './pages/Products';
+import Health from './pages/Health';
+import Support from './pages/Support';
+import About from './pages/About';
+import ChatFullscreen from './pages/ChatFullscreen';
 
 function App() {
-  // Navigation & Page State
-  const [activePage, setActivePage] = useState('home');
-  const [knowledgeCategory, setKnowledgeCategory] = useState('Giáo dục giới tính');
-  const [productCategory, setProductCategory] = useState('Sản phẩm giáo dục');
+  // Navigation & Page State synchronized via URL
+  const [location, navigate] = useLocation();
+
+  // Helper to resolve active tab based on pathname
+  const getActivePage = () => {
+    if (location === '/') return 'home';
+    if (location === '/knowledge') return 'knowledge';
+    if (location === '/products') return 'products';
+    if (location === '/health') return 'health';
+    if (location === '/support') return 'support';
+    if (location === '/about') return 'about';
+    if (location === '/chat') return 'chat-fullscreen';
+    return 'home'; // fallback
+  };
+
+  const activePage = getActivePage();
+
+  const [knowledgeCategory, setKnowledgeCategory] = useState(null);
+  const [productCategory, setProductCategory] = useState(() => {
+    try {
+      return sessionStorage.getItem('bloomAgainProductCat') || 'Sản phẩm giáo dục';
+    } catch {
+      return 'Sản phẩm giáo dục';
+    }
+  });
+
+  // Helper to read initial profile synchronously to prevent onboarding flicker on mount
+  const getInitialProfile = () => {
+    try {
+      const stored = sessionStorage.getItem('bloomAgainProfile');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.gender && parsed.age) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn('Unable to read session storage', err);
+    }
+    return null;
+  };
+
+  const initialProfile = getInitialProfile();
 
   // User Profile / Onboarding State
-  const [gender, setGender] = useState(null);
-  const [age, setAge] = useState(null);
-  const [showOnboarding, setShowOnboarding] = useState(true);
-  // Temp selections inside onboarding (not yet confirmed)
-  const [tempGender, setTempGender] = useState(null);
-  const [tempAge, setTempAge] = useState(null);
+  const [gender, setGender] = useState(initialProfile ? initialProfile.gender : null);
+  const [age, setAge] = useState(initialProfile ? initialProfile.age : null);
+  const [showOnboarding, setShowOnboarding] = useState(!initialProfile);
+  const [tempGender, setTempGender] = useState(initialProfile ? initialProfile.gender : null);
+  const [tempAge, setTempAge] = useState(initialProfile ? initialProfile.age : null);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,30 +85,14 @@ function App() {
   const [expandedCenter, setExpandedCenter] = useState(null);
 
   // API data
-  const { knowledge: apiKnowledge, productCategories: apiProducts, healthFacilities: apiFacilities, supportCenters: apiCenters, loading: dataLoading } = useAppData();
+  const { knowledge: apiKnowledge, productCategories: apiProducts, healthFacilities: apiFacilities, supportCenters: apiCenters, loading } = useAppData();
   const knowledge = apiKnowledge || staticData.knowledge;
   const productCategoriesData = apiProducts || staticData.productCategories;
   const healthFacilitiesData = apiFacilities || staticData.healthFacilities;
   const supportCentersData = apiCenters || staticData.supportCenters;
 
-  // Suggestions state (gender × age)
+  // Suggestions state
   const [suggestions, setSuggestions] = useState([]);
-
-  // Initialize profile from sessionStorage
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(sessionStorage.getItem('bloomAgainProfile') || 'null');
-      if (stored && stored.gender && stored.age) {
-        setGender(stored.gender);
-        setAge(stored.age);
-        setTempGender(stored.gender);
-        setTempAge(stored.age);
-        setShowOnboarding(false);
-      }
-    } catch (err) {
-      console.warn('Unable to read session storage', err);
-    }
-  }, []);
 
   // Fetch suggestions whenever gender or age changes
   useEffect(() => {
@@ -107,7 +106,7 @@ function App() {
   // Scroll to top on page change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activePage]);
+  }, [location]);
 
   // Handle auto scroll for chat messages
   useEffect(() => {
@@ -120,7 +119,7 @@ function App() {
       }
     }, 80);
     return () => clearTimeout(timer);
-  }, [chatHistory, isBotTyping, isChatOpen, activePage]);
+  }, [chatHistory, isBotTyping, isChatOpen, location]);
 
   // Confirm onboarding selection
   const handleConfirmOnboarding = () => {
@@ -130,6 +129,13 @@ function App() {
     sessionStorage.setItem('bloomAgainProfile', JSON.stringify({ gender: tempGender, age: tempAge }));
     setShowOnboarding(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Report selection to database statistics
+    fetch(`${API_BASE}/api/stats`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gender: tempGender, age: tempAge })
+    }).catch(err => console.warn('Failed to record onboarding stats', err));
   };
 
   // Reset profile / onboarding
@@ -187,7 +193,7 @@ function App() {
     setSearchResults(results);
     setSearchSummary(`Từ khóa: "${searchQuery}" • ${results.length} kết quả`);
     setShowSearchResults(true);
-    setActivePage('home');
+    navigate('/');
   };
 
   // Chat submit logic interacting with Express backend
@@ -196,7 +202,6 @@ function App() {
     const message = chatInput.trim();
     if (!message) return;
 
-    // Add user message to history
     const userMessageObj = { role: 'user', content: message };
     const updatedHistory = [...chatHistory, userMessageObj];
     setChatHistory(updatedHistory);
@@ -225,7 +230,10 @@ function App() {
             setProductCategory(data.category);
           }
         }
-        setActivePage(data.target);
+        let path = data.target;
+        if (path === 'home') path = '/';
+        else if (!path.startsWith('/')) path = '/' + path;
+        navigate(path);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -238,7 +246,6 @@ function App() {
     }
   };
 
-  // Initialize chat history with greeting when opening
   const initChat = () => {
     if (chatHistory.length === 0) {
       setChatHistory([
@@ -250,7 +257,6 @@ function App() {
     }
   };
 
-  // Chat opening initialization (floating panel)
   const toggleChatPanel = () => {
     setIsChatOpen(prev => {
       const next = !prev;
@@ -259,30 +265,36 @@ function App() {
     });
   };
 
-  // Open home page AI chat button (same as clicking FAB)
   const handleHomeChatOpen = () => {
     initChat();
     setIsChatOpen(true);
   };
 
-  // Go to fullscreen chat page
   const handleGoFullscreenChat = () => {
     initChat();
     setIsChatOpen(false);
-    setActivePage('chat-fullscreen');
+    navigate('/chat');
   };
 
-  // Suggestion Chip handler — navigate to knowledge page with correct category
   const handleSuggestionClick = (item) => {
     const cat = typeof item === 'string' ? item : item.category;
     if (cat && knowledge && knowledge[cat]) {
       setKnowledgeCategory(cat);
-      setActivePage('knowledge');
+      navigate('/knowledge');
     }
   };
 
   const currentKnowledge = knowledge ? knowledge[knowledgeCategory] : null;
   const currentProducts = productCategoriesData ? productCategoriesData[productCategory] : null;
+
+  if (loading) {
+    return (
+      <div className="client-loading-screen">
+        <div className="loading-logo">🌸</div>
+        <div className="loading-text">Đang tải dữ liệu...</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -295,7 +307,6 @@ function App() {
                 <div>
                   <div className="eyebrow">🌸 Chào mừng đến với Bloom Again</div>
                   <h2 className="onboard-title">Chọn nhanh để cá nhân hóa nội dung, không cần thao tác rườm rà.</h2>
-                  <p className="onboard-sub">Dữ liệu chỉ lưu trong phiên bằng sessionStorage và có thể đổi ở chân trang.</p>
                 </div>
                 <div className="status-pill">
                   {tempGender && tempAge
@@ -358,7 +369,7 @@ function App() {
       {/* Top Navbar */}
       <header className="topbar">
         <div className="shell nav-wrap">
-          <a className="brand" href="#home" onClick={(e) => { e.preventDefault(); setActivePage('home'); setShowSearchResults(false); }}>
+          <a className="brand" href="/" onClick={(e) => { e.preventDefault(); navigate('/'); setShowSearchResults(false); }}>
             <div className="brand-mark">🌸</div>
             <div className="brand-text">
               <strong>Bloom Again</strong>
@@ -367,10 +378,9 @@ function App() {
           </a>
 
           <nav className="top-nav" aria-label="Điều hướng chính">
-            {/* Trang chủ */}
             <button
               className={`nav-btn ${activePage === 'home' ? 'active' : ''}`}
-              onClick={() => { setActivePage('home'); setShowSearchResults(false); }}
+              onClick={() => { navigate('/'); setShowSearchResults(false); }}
               type="button"
             >
               Trang chủ
@@ -378,7 +388,10 @@ function App() {
 
             <button
               className={`nav-btn ${activePage === 'knowledge' ? 'active' : ''}`}
-              onClick={() => setActivePage('knowledge')}
+              onClick={() => {
+                setKnowledgeCategory(null);
+                navigate('/knowledge');
+              }}
               type="button"
             >
               Kiến thức
@@ -395,8 +408,8 @@ function App() {
                     className="dropdown-item"
                     type="button"
                     onClick={() => {
-                      setProductCategory(cat);
-                      setActivePage('products');
+                      sessionStorage.setItem('bloomAgainProductCat', cat);
+                      window.location.href = '/products';
                     }}
                   >
                     {cat}
@@ -410,19 +423,18 @@ function App() {
                 Giải pháp
               </button>
               <div className="dropdown-menu">
-                <button className="dropdown-item" type="button" onClick={() => setActivePage('support')}>
+                <button className="dropdown-item" type="button" onClick={() => { window.location.href = '/support'; }}>
                   Trung tâm bảo trợ trẻ em
                 </button>
-                <button className="dropdown-item" type="button" onClick={() => setActivePage('health')}>
+                <button className="dropdown-item" type="button" onClick={() => { window.location.href = '/health'; }}>
                   Cơ sở y tế
                 </button>
               </div>
             </div>
 
-            {/* Về chúng tôi */}
             <button
               className={`nav-btn ${activePage === 'about' ? 'active' : ''}`}
-              onClick={() => setActivePage('about')}
+              onClick={() => navigate('/about')}
               type="button"
             >
               Về chúng tôi
@@ -432,499 +444,76 @@ function App() {
       </header>
 
       {/* Main Pages */}
-      {/* Shell */}
       <main className="shell">
-        {/* HOME PAGE */}
         {activePage === 'home' && (
-          <div className="page active">
-            <div className="hero">
-              <div>
-                <div className="eyebrow">Hãy để những cánh hoa nở lại</div>
-                <h1>Đồng hành cùng tuổi trẻ an toàn và hiểu biết</h1>
-                <p className="subtitle">Trang web giáo dục giới tính kết hợp tâm sinh lý, tạo không gian tìm hiểu nhẹ nhàng, bảo mật và không phán xét.</p>
-                <div className="trustline">🔒 Bảo mật • An toàn • Hoàn toàn ẩn danh • Không phán xét</div>
-                <div className="hero-actions">
-                  <button className="btn primary" onClick={() => setActivePage('knowledge')} type="button">Mở Kiến thức</button>
-                  <button className="btn secondary" onClick={() => setActivePage('products')} type="button">Xem Sản phẩm</button>
-                  <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
-                    <span className="ai-chat-icon">🤖</span>
-                    Chat với AI
-                  </button>
-                </div>
-              </div>
-              <div className="mascot-wrap">
-                <div className="mascot" aria-hidden="true">
-                  <div className="flower">🌼</div>
-                  <div className="face">◠‿◠</div>
-                  <div className="floating-badge">Linh vật đồng hành</div>
-                </div>
-              </div>
-            </div>
-
-            <section className="section">
-              <div className="section-head">
-                <div>
-                  <h2>Gợi ý vấn đề theo lựa chọn của bạn</h2>
-                  <p>{gender ? `Gợi ý nhanh cho ${gender}${age ? ` • ${age}` : ''}:` : 'Chọn giới tính và độ tuổi để nhận gợi ý phù hợp.'}</p>
-                </div>
-              </div>
-              <div className="chips">
-                {suggestions.length > 0 ? (
-                  suggestions.map((item, idx) => (
-                    <button key={idx} className="chip" onClick={() => handleSuggestionClick(item)}>
-                      {item.icon && <span style={{ marginRight: '6px' }}>{item.icon}</span>}
-                      {item.label || item}
-                    </button>
-                  ))
-                ) : (
-                  <div className="notice">Hãy đổi lựa chọn ở footer để nhận gợi ý phù hợp.</div>
-                )}
-              </div>
-            </section>
-
-            <section className="section home-search-section">
-              <div className="search-container">
-                <h2>Bạn muốn tìm kiếm điều gì hôm nay?</h2>
-                <p>Khám phá kiến thức giáo dục giới tính, sản phẩm, và các cơ sở hỗ trợ y tế, tâm lý uy tín.</p>
-                <form onSubmit={handleSearchSubmit} className="home-search-box">
-                  <input
-                    type="search"
-                    placeholder="Nhập từ khóa tìm kiếm (ví dụ: tuổi dậy thì, bao cao su, cơ sở y tế...)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <button type="submit">
-                    <span className="search-btn-icon">🔍</span> Tìm kiếm
-                  </button>
-                </form>
-              </div>
-            </section>
-
-            {showSearchResults && (
-              <section className="section" id="searchResultsSection">
-                <div className="section-head">
-                  <div>
-                    <h2>Kết quả tìm kiếm</h2>
-                    <p>{searchSummary}</p>
-                  </div>
-                </div>
-                <div className="search-results">
-                  {searchResults.length > 0 ? (
-                    searchResults.map((r, idx) => (
-                      <div key={idx} className="search-item">
-                        <strong>{r.title}</strong>
-                        <span>{r.type} • {r.meta}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="notice">Không tìm thấy kết quả phù hợp.</div>
-                  )}
-                </div>
-              </section>
-            )}
-          </div>
+          <Home
+            gender={gender}
+            age={age}
+            suggestions={suggestions}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchResults={searchResults}
+            showSearchResults={showSearchResults}
+            searchSummary={searchSummary}
+            handleSearchSubmit={handleSearchSubmit}
+            handleSuggestionClick={handleSuggestionClick}
+            handleHomeChatOpen={handleHomeChatOpen}
+            navigate={navigate}
+          />
         )}
 
-        {/* KNOWLEDGE PAGE */}
         {activePage === 'knowledge' && (
-          <div className="page active">
-            <section className="section">
-              <div className="section-head">
-                <div>
-                  <h2>Kho kiến thức</h2>
-                  <p>Chọn danh mục để xem bài viết mẫu và gợi ý sản phẩm liên quan.</p>
-                </div>
-              </div>
-              <div className="chips">
-                {Object.keys(knowledge).map(name => (
-                  <button
-                    key={name}
-                    className={`chip ${name === knowledgeCategory ? 'active' : ''}`}
-                    onClick={() => setKnowledgeCategory(name)}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-              <div className="grid-2 mtop">
-                <div className="articles-grid">
-                  {(currentKnowledge?.articles || []).map((article, idx) => (
-                    <article key={idx} className="card">
-                      <div className="img-placeholder" style={{ height: '140px', background: '#f8ece6', display: 'grid', placeItems: 'center', color: '#b55139', fontWeight: 600 }}>Ảnh bài viết</div>
-                      <div className="card-body">
-                        <h3>{article.title}</h3>
-                        <p>{article.desc}</p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-                <aside className="section-soft">
-                  <h3>Gợi ý sản phẩm</h3>
-                  <div className="product-list">
-                    {(currentKnowledge?.products || []).map((product, idx) => (
-                      <div key={idx} className="product-item">
-                        <strong>{product.name}</strong>
-                        <span>Giá: {product.price}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="notice">{currentKnowledge?.note}</p>
-                </aside>
-              </div>
-            </section>
-          </div>
+          <Knowledge
+            knowledge={knowledge}
+            knowledgeCategory={knowledgeCategory}
+            setKnowledgeCategory={setKnowledgeCategory}
+            currentKnowledge={currentKnowledge}
+          />
         )}
 
-        {/* PRODUCTS PAGE */}
         {activePage === 'products' && (
-          <div className="page active">
-            <section className="section">
-              <div className="section-head">
-                <div>
-                  <h2>Trang sản phẩm theo phân loại</h2>
-                  <p>Có thể đi vào từng nhóm từ menu Sản phẩm hoặc qua gợi ý của chat AI.</p>
-                </div>
-              </div>
-              <div className="chips">
-                {Object.keys(productCategoriesData || {}).map(name => (
-                  <button
-                    key={name}
-                    className={`chip ${name === productCategory ? 'active' : ''}`}
-                    onClick={() => setProductCategory(name)}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-              <div className="product-grid">
-                {(currentProducts || []).map((product, idx) => (
-                  <div key={idx} className="product-item">
-                    <strong>{product.name}</strong>
-                    <span>{product.desc}</span>
-                    <div className="product-item-footer">
-                      <span className="product-price">Giá: {product.price}</span>
-                      <a href={product.link || '#'} target="_blank" rel="noopener noreferrer" className="product-link-btn">
-                        Xem chi tiết ↗
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
+          <Products
+            productCategoriesData={productCategoriesData}
+            productCategory={productCategory}
+            setProductCategory={setProductCategory}
+            currentProducts={currentProducts}
+          />
         )}
 
-        {/* HEALTH PAGE */}
-        {activePage === 'health' && (() => {
-          const filteredFacilities = (healthFacilitiesData || []).filter(
-            item => healthRegionFilter === 'Tất cả' || item.region === healthRegionFilter
-          );
-          const selectedItem = filteredFacilities.find(f => f.name === expandedFacility);
+        {activePage === 'health' && (
+          <Health
+            healthFacilitiesData={healthFacilitiesData}
+            healthRegionFilter={healthRegionFilter}
+            setHealthRegionFilter={setHealthRegionFilter}
+            expandedFacility={expandedFacility}
+            setExpandedFacility={setExpandedFacility}
+          />
+        )}
 
-          return (
-            <div className="page active">
-              <section className="section">
-                <div className="section-head">
-                  <div>
-                    <h2>Cơ sở y tế thân thiện với teen</h2>
-                    <p>Danh sách minh họa để người dùng tìm nơi hỗ trợ an toàn.</p>
-                  </div>
-                </div>
+        {activePage === 'support' && (
+          <Support
+            supportCentersData={supportCentersData}
+            supportRegionFilter={supportRegionFilter}
+            setSupportRegionFilter={setSupportRegionFilter}
+            expandedCenter={expandedCenter}
+            setExpandedCenter={setExpandedCenter}
+          />
+        )}
 
-                {/* Region Selector */}
-                <div className="filter-chips">
-                  {['Tất cả', 'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'].map((r) => (
-                    <button
-                      key={r}
-                      className={`filter-chip ${healthRegionFilter === r ? 'active' : ''}`}
-                      onClick={() => {
-                        setHealthRegionFilter(r);
-                        setExpandedFacility(null);
-                      }}
-                      type="button"
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="facilities-grid">
-                  {filteredFacilities.map((item, idx) => {
-                    const isSelected = expandedFacility === item.name;
-                    return (
-                      <div 
-                        key={idx} 
-                        className={`facility-item clickable ${isSelected ? 'selected' : ''}`}
-                        onClick={() => setExpandedFacility(isSelected ? null : item.name)}
-                      >
-                        <div className="facility-item-header">
-                          <div className="facility-title-area">
-                            <strong>{item.name}</strong>
-                            <span className="facility-region">{item.region}</span>
-                          </div>
-                          <div style={{ color: 'var(--text-light)', fontSize: '0.85rem', marginTop: 6 }}>
-                            ⏰ {item.workingHours}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Separate Details Row Below Grid */}
-                {selectedItem && (
-                  <div className="facility-detail-panel">
-                    <div className="facility-detail-panel-header">
-                      <h3>Chi tiết cơ sở: {selectedItem.name}</h3>
-                      <button className="detail-close-btn" onClick={() => setExpandedFacility(null)}>×</button>
-                    </div>
-                    <div className="facility-details-grid">
-                      <div className="facility-image">
-                        {renderFacilitySvg(selectedItem.svgType)}
-                      </div>
-                      <div className="facility-info-text">
-                        <p><strong>⏰ Giờ làm việc:</strong> {selectedItem.workingHours}</p>
-                        <p><strong>📞 Điện thoại:</strong> {selectedItem.phone}</p>
-                        <p>
-                          <strong>📍 Địa chỉ:</strong>{' '}
-                          <a 
-                            href={selectedItem.gmaps} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="gmaps-link"
-                          >
-                            {selectedItem.address} ↗
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
-            </div>
-          );
-        })()}
-
-        {/* SUPPORT PAGE */}
-        {activePage === 'support' && (() => {
-          const filteredCenters = (supportCentersData || []).filter(
-            item => supportRegionFilter === 'Tất cả' || item.region === supportRegionFilter
-          );
-          const selectedItem = filteredCenters.find(c => c.name === expandedCenter);
-
-          return (
-            <div className="page active">
-              <section className="section">
-                <div className="section-head">
-                  <div>
-                    <h2>Trung tâm bảo trợ trẻ em</h2>
-                    <p>Danh sách trung tâm hỗ trợ và số hotline tham khảo.</p>
-                  </div>
-                </div>
-
-                {/* Region Selector */}
-                <div className="filter-chips">
-                  {['Tất cả', 'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'].map((r) => (
-                    <button
-                      key={r}
-                      className={`filter-chip ${supportRegionFilter === r ? 'active' : ''}`}
-                      onClick={() => {
-                        setSupportRegionFilter(r);
-                        setExpandedCenter(null);
-                      }}
-                      type="button"
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="facilities-grid">
-                  {filteredCenters.map((item, idx) => {
-                    const isSelected = expandedCenter === item.name;
-                    return (
-                      <div 
-                        key={idx} 
-                        className={`facility-item clickable ${isSelected ? 'selected' : ''}`}
-                        onClick={() => setExpandedCenter(isSelected ? null : item.name)}
-                      >
-                        <div className="facility-item-header">
-                          <div className="facility-title-area">
-                            <strong>{item.name}</strong>
-                            <span className="facility-region">{item.region}</span>
-                          </div>
-                          <div style={{ color: 'var(--text-light)', fontSize: '0.85rem', marginTop: 6 }}>
-                            ⏰ {item.workingHours}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Separate Details Row Below Grid */}
-                {selectedItem && (
-                  <div className="facility-detail-panel">
-                    <div className="facility-detail-panel-header">
-                      <h3>Chi tiết trung tâm: {selectedItem.name}</h3>
-                      <button className="detail-close-btn" onClick={() => setExpandedCenter(null)}>×</button>
-                    </div>
-                    <div className="facility-details-grid">
-                      <div className="facility-image">
-                        {renderFacilitySvg(selectedItem.svgType)}
-                      </div>
-                      <div className="facility-info-text">
-                        <p><strong>⏰ Giờ làm việc:</strong> {selectedItem.workingHours}</p>
-                        <p><strong>📞 Hotline:</strong> <span className="hotline-highlight">{selectedItem.hotline}</span></p>
-                        <p>
-                          <strong>📍 Địa chỉ:</strong>{' '}
-                          <a 
-                            href={selectedItem.gmaps} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="gmaps-link"
-                          >
-                            {selectedItem.address} ↗
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
-            </div>
-          );
-        })()}
-
-        {/* ABOUT PAGE */}
         {activePage === 'about' && (
-          <div className="page active">
-            <div className="about-hero">
-              <div className="about-hero-text">
-                <div className="eyebrow">🌸 Câu chuyện của chúng tôi</div>
-                <h1 className="about-title">Về Bloom Again</h1>
-                <p className="about-subtitle">Chúng tôi tin rằng mọi bạn trẻ đều xứng đáng được tiếp cận kiến thức đúng đắn về giới tính và sức khỏe tâm lý, trong một không gian an toàn, thân thiện và không phán xét.</p>
-              </div>
-              <div className="about-badge-wrap">
-                <div className="about-badge">🌼</div>
-              </div>
-            </div>
-
-            <div className="about-grid">
-              <div className="about-card">
-                <div className="about-card-icon">🎯</div>
-                <h3>Sứ mệnh</h3>
-                <p>Cung cấp nền tảng giáo dục giới tính toàn diện, giúp thanh thiếu niên Việt Nam hiểu rõ cơ thể, cảm xúc và quyền của bản thân một cách khoa học và gần gũi.</p>
-              </div>
-              <div className="about-card">
-                <div className="about-card-icon">👁️</div>
-                <h3>Tầm nhìn</h3>
-                <p>Xây dựng thế hệ trẻ Việt tự tin, hiểu biết và có trách nhiệm với bản thân cũng như người xung quanh trong các mối quan hệ và sức khỏe cá nhân.</p>
-              </div>
-              <div className="about-card">
-                <div className="about-card-icon">💡</div>
-                <h3>Giá trị cốt lõi</h3>
-                <p>An toàn, bảo mật, không phán xét. Mọi thông tin đều được kiểm duyệt bởi chuyên gia y tế và tâm lý học có chứng chỉ.</p>
-              </div>
-            </div>
-
-            <section className="section about-team-section">
-              <div className="section-head">
-                <div>
-                  <h2>Đội ngũ sáng lập</h2>
-                  <p>Những người đã xây dựng Bloom Again với tâm huyết vì thế hệ trẻ.</p>
-                </div>
-              </div>
-              <div className="team-grid">
-                {[
-                  { name: 'Nguyễn Minh Anh', role: 'Nhà sáng lập & Giám đốc điều hành', emoji: '👩‍💼', desc: 'Chuyên gia tâm lý học lâm sàng với 8 năm kinh nghiệm tư vấn cho thanh thiếu niên.' },
-                  { name: 'Trần Bảo Long', role: 'Giám đốc Y tế', emoji: '👨‍⚕️', desc: 'Bác sĩ chuyên khoa sản phụ khoa, 10 năm kinh nghiệm giáo dục sức khỏe sinh sản.' },
-                  { name: 'Lê Thị Hương', role: 'Trưởng phòng Nội dung', emoji: '👩‍🏫', desc: 'Giáo viên và nhà văn, chuyên viết nội dung giáo dục phù hợp với lứa tuổi teen.' },
-                ].map((member, idx) => (
-                  <div key={idx} className="team-card">
-                    <div className="team-avatar">{member.emoji}</div>
-                    <div className="team-info">
-                      <strong>{member.name}</strong>
-                      <span className="team-role">{member.role}</span>
-                      <p>{member.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="section about-stats-section">
-              <div className="stats-grid">
-                {[
-                  { num: '10,000+', label: 'Người dùng tin tưởng' },
-                  { num: '150+', label: 'Bài viết chuyên sâu' },
-                  { num: '24/7', label: 'AI hỗ trợ liên tục' },
-                  { num: '100%', label: 'Miễn phí & Ẩn danh' },
-                ].map((stat, idx) => (
-                  <div key={idx} className="stat-item">
-                    <span className="stat-num">{stat.num}</span>
-                    <span className="stat-label">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
+          <About />
         )}
 
-        {/* FULLSCREEN CHAT PAGE */}
         {activePage === 'chat-fullscreen' && (
-          <div className="page active fullscreen-chat-page">
-            <div className="fullscreen-chat-container">
-              <div className="fullscreen-chat-header">
-                <button
-                  className="fs-back-btn"
-                  onClick={() => setActivePage('home')}
-                  type="button"
-                  aria-label="Quay lại trang chủ"
-                >
-                  ← Quay lại
-                </button>
-                <div className="fs-chat-title">
-                  <div>
-                    <strong>AI của Bloom Again</strong>
-                    <span>Trấn an tâm lý • Tư vấn sản phẩm • Kiến thức giới tính • Tìm cơ sở y tế</span>
-                  </div>
-                </div>
-                <div className="fs-status">
-                  <span className="fs-online-dot"></span>
-                  Đang hoạt động
-                </div>
-              </div>
-
-              <div className="fullscreen-chat-messages">
-                {chatHistory.map((msg, idx) => (
-                  <div key={idx} className={`msg ${msg.role === 'user' ? 'user' : 'bot'}`}>
-                    <div className="msg-content">{msg.content}</div>
-                  </div>
-                ))}
-                {isBotTyping && (
-                  <div className="msg bot">
-                    <div className="msg-content typing-indicator">
-                      <span></span><span></span><span></span>
-                    </div>
-                  </div>
-                )}
-                <div ref={fullscreenChatEndRef} />
-              </div>
-
-              <form className="fullscreen-chat-input" onSubmit={handleChatSubmit}>
-                <input
-                  type="text"
-                  placeholder="Nhập điều bạn đang quan tâm..."
-                  autoComplete="off"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  id="fullscreenChatInput"
-                />
-                <button className="chat-send" type="submit" id="fullscreenChatSend">Gửi ✈</button>
-              </form>
-            </div>
-          </div>
+          <ChatFullscreen
+            chatHistory={chatHistory}
+            isBotTyping={isBotTyping}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            handleChatSubmit={handleChatSubmit}
+            fullscreenChatEndRef={fullscreenChatEndRef}
+            navigate={navigate}
+          />
         )}
       </main>
 
@@ -943,7 +532,7 @@ function App() {
         <button className="chat-fab" onClick={toggleChatPanel} aria-label="Mở chat AI">💬</button>
       )}
 
-      {/* Chat Panel */}
+      {/* Chat Panel (Floating Widget) */}
       {activePage !== 'chat-fullscreen' && (
         <section className={`chat-panel ${isChatOpen ? 'open' : ''}`} aria-label="Chat AI Bloom Again">
           <div className="chat-header">

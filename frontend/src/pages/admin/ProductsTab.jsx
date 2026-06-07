@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { useAdminCRUD, ConfirmDialog, AdminModal, Field } from './adminUtils';
 
 const PRODUCT_CATS = ['Sản phẩm chăm sóc cơ thể', 'Sản phẩm giáo dục', 'Sản phẩm tránh thai', 'Sản phẩm vệ sinh'];
-const empty = () => ({ category: PRODUCT_CATS[0], name: '', price: '', description: '', link: '' });
+const KNOWLEDGE_CATS = [
+  'Giáo dục giới tính', 'Tâm sinh lý tuổi dậy thì', 'Tâm lý yêu đương tuổi học trò',
+  'Biện pháp tránh thai', 'Chăm sóc cơ thể', 'Tình dục an toàn', 'Bài tập hỗ trợ (xương, hormone)'
+];
+const empty = () => ({ category: PRODUCT_CATS[0], name: '', price: '', description: '', link: '', suggested_categories: [] });
 
 export default function ProductsTab({ token }) {
-  const { items, loading, create, update, remove } = useAdminCRUD('products', token);
+  const { items, loading, create, update, remove, renderToast, showToast } = useAdminCRUD('products', token);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
@@ -13,12 +17,30 @@ export default function ProductsTab({ token }) {
 
   const openAdd = () => { setForm(empty()); setModal({ mode: 'add' }); };
   const openEdit = (item) => {
-    setForm({ category: item.category, name: item.name, price: item.price, description: item.description || '', link: item.link || '' });
+    setForm({
+      category: item.category,
+      name: item.name,
+      price: item.price,
+      description: item.description || '',
+      link: item.link || '',
+      suggested_categories: item.suggested_categories || []
+    });
     setModal({ mode: 'edit', id: item.id });
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.price.trim() || !form.link.trim()) return;
+    if (!form.name.trim()) {
+      showToast('Vui lòng nhập tên sản phẩm!', 'error');
+      return;
+    }
+    if (!form.price.trim()) {
+      showToast('Vui lòng nhập giá sản phẩm!', 'error');
+      return;
+    }
+    if (!form.description.trim()) {
+      showToast('Vui lòng nhập mô tả sản phẩm!', 'error');
+      return;
+    }
     setSaving(true);
     if (modal.mode === 'add') await create(form);
     else await update(modal.id, form);
@@ -26,11 +48,23 @@ export default function ProductsTab({ token }) {
     setModal(null);
   };
 
+  const [filterCat, setFilterCat] = useState('Tất cả');
+  const [filterSuggest, setFilterSuggest] = useState('Tất cả');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const currentItems = items.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const filtered = items.filter(item => {
+    const matchCat = filterCat === 'Tất cả' || item.category === filterCat;
+    let matchSuggest = true;
+    if (filterSuggest === 'Chưa có gợi ý') {
+      matchSuggest = !item.suggested_categories || item.suggested_categories.length === 0;
+    } else if (filterSuggest !== 'Tất cả') {
+      matchSuggest = item.suggested_categories && item.suggested_categories.includes(filterSuggest);
+    }
+    return matchCat && matchSuggest;
+  });
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <div>
@@ -39,11 +73,57 @@ export default function ProductsTab({ token }) {
         <button className="admin-add-btn" onClick={openAdd}>+ Thêm sản phẩm</button>
       </div>
 
+      {/* Filter Row 1: Product Classification */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--admin-muted)', minWidth: '100px' }}>Phân loại:</span>
+        {['Tất cả', ...PRODUCT_CATS].map(cat => (
+          <button
+            key={cat}
+            onClick={() => { setFilterCat(cat); setPage(1); }}
+            style={{
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: '1px solid var(--admin-border)',
+              background: filterCat === cat ? 'var(--admin-accent)' : 'transparent',
+              color: filterCat === cat ? '#fff' : 'var(--admin-muted)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 600
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Filter Row 2: Suggested Knowledge Categories */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--admin-muted)', minWidth: '100px' }}>Gợi ý bài viết:</span>
+        {['Tất cả', 'Chưa có gợi ý', ...KNOWLEDGE_CATS].map(cat => (
+          <button
+            key={cat}
+            onClick={() => { setFilterSuggest(cat); setPage(1); }}
+            style={{
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: '1px solid var(--admin-border)',
+              background: filterSuggest === cat ? '#3ecf8e33' : 'transparent',
+              color: filterSuggest === cat ? '#3ecf8e' : 'var(--admin-muted)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 600
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       <div className="admin-table-wrap">
         {loading ? <div className="admin-loading">Đang tải...</div> : (
           <table className="admin-table">
             <thead>
-              <tr><th>Danh mục</th><th>Tên sản phẩm</th><th>Giá</th><th>Mô tả</th><th>Thao tác</th></tr>
+              <tr><th>Danh mục</th><th>Tên sản phẩm</th><th>Giá</th><th>Mô tả</th><th>Gợi ý cho</th><th>Thao tác</th></tr>
             </thead>
             <tbody>
               {currentItems.map(item => (
@@ -53,6 +133,18 @@ export default function ProductsTab({ token }) {
                   <td>{item.price}</td>
                   <td title={item.description}>{item.description}</td>
                   <td>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '240px' }}>
+                      {(item.suggested_categories || []).map(c => (
+                        <span key={c} style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: '#3ecf8e33', color: '#3ecf8e', fontWeight: 600 }}>
+                          {c}
+                        </span>
+                      ))}
+                      {(!item.suggested_categories || item.suggested_categories.length === 0) && (
+                        <span style={{ color: 'var(--admin-muted)', fontSize: '0.75rem' }}>-</span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
                     <div className="admin-action-btns">
                       <button className="admin-edit-btn" onClick={() => openEdit(item)}>Sửa</button>
                       <button className="admin-del-btn" onClick={() => setConfirmId(item.id)}>Xoá</button>
@@ -60,8 +152,8 @@ export default function ProductsTab({ token }) {
                   </td>
                 </tr>
               ))}
-              {items.length === 0 && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--admin-muted)', padding: 24 }}>Không có dữ liệu</td></tr>
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--admin-muted)', padding: 24 }}>Không có dữ liệu</td></tr>
               )}
             </tbody>
           </table>
@@ -104,8 +196,30 @@ export default function ProductsTab({ token }) {
           <Field label="Mô tả">
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn..." />
           </Field>
-          <Field label="Link (tuỳ chọn)">
+          <Field label="Link">
             <input value={form.link} onChange={e => setForm(f => ({ ...f, link: e.target.value }))} placeholder="#" />
+          </Field>
+          <Field label="Gợi ý cho danh mục bài viết (kho kiến thức)">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', padding: '10px', background: 'var(--admin-surface2)', borderRadius: '8px', marginTop: '6px', border: '1px solid var(--admin-border)' }}>
+              {KNOWLEDGE_CATS.map(cat => {
+                const checked = (form.suggested_categories || []).includes(cat);
+                return (
+                  <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--admin-muted)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={e => {
+                        const next = e.target.checked
+                          ? [...(form.suggested_categories || []), cat]
+                          : (form.suggested_categories || []).filter(c => c !== cat);
+                        setForm(f => ({ ...f, suggested_categories: next }));
+                      }}
+                    />
+                    {cat}
+                  </label>
+                );
+              })}
+            </div>
           </Field>
         </AdminModal>
       )}
@@ -113,6 +227,7 @@ export default function ProductsTab({ token }) {
       {confirmId && (
         <ConfirmDialog message="Sản phẩm này sẽ bị xoá vĩnh viễn." onYes={async () => { await remove(confirmId); setConfirmId(null); }} onNo={() => setConfirmId(null)} />
       )}
+      {renderToast()}
     </div>
   );
 }

@@ -214,6 +214,19 @@ async function seedAll() {
       console.log('ℹ️  Admin user đã tồn tại, bỏ qua.');
     }
 
+    // Products
+    const productCount = await Product.countDocuments();
+    if (productCount === 0) {
+      for (const [cat, prods] of Object.entries(staticData.productCategories)) {
+        for (const p of prods) {
+          await Product.create({ category: cat, name: p.name, price: p.price, description: p.desc, link: p.link || '#', suggested_categories: [] });
+        }
+      }
+      console.log('✅ Seed products xong');
+    } else {
+      console.log('ℹ️  Products đã có dữ liệu, bỏ qua.');
+    }
+
     // Articles (knowledge)
     const articleCount = await Article.countDocuments();
     if (articleCount === 0) {
@@ -222,26 +235,28 @@ async function seedAll() {
           await Article.create({ category: cat, title: art.title, description: art.desc });
         }
         for (const prod of data.products) {
-          await ArticleProduct.create({ article_cat: cat, name: prod.name, price: prod.price, link: prod.link || '#' });
+          const existingProd = await Product.findOne({ name: prod.name });
+          if (existingProd) {
+            if (!existingProd.suggested_categories.includes(cat)) {
+              existingProd.suggested_categories.push(cat);
+              await existingProd.save();
+            }
+          } else {
+            await Product.create({
+              category: 'Sản phẩm giáo dục',
+              name: prod.name,
+              price: prod.price,
+              description: 'Sản phẩm gợi ý cho kiến thức',
+              link: prod.link || '#',
+              suggested_categories: [cat]
+            });
+          }
         }
         await ArticleNote.create({ article_cat: cat, note: data.note });
       }
       console.log('✅ Seed articles/knowledge xong');
     } else {
       console.log('ℹ️  Articles đã có dữ liệu, bỏ qua.');
-    }
-
-    // Products
-    const productCount = await Product.countDocuments();
-    if (productCount === 0) {
-      for (const [cat, prods] of Object.entries(staticData.productCategories)) {
-        for (const p of prods) {
-          await Product.create({ category: cat, name: p.name, price: p.price, description: p.desc, link: p.link || '#' });
-        }
-      }
-      console.log('✅ Seed products xong');
-    } else {
-      console.log('ℹ️  Products đã có dữ liệu, bỏ qua.');
     }
 
     // Health Facilities

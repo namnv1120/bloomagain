@@ -34,11 +34,11 @@ function parseHoursString(str) {
 const emptyForm = () => ({
   name: '', address: '', phone: '', region: REGIONS[0],
   from: '08:00', to: '18:00', days: 'Thứ 2 - Thứ Bảy',
-  gmaps: '',
+  gmaps: '', rating: 5, note: '',
 });
 
 export default function FacilitiesTab({ token }) {
-  const { items, loading, create, update, remove } = useAdminCRUD('facilities', token);
+  const { items, loading, create, update, remove, renderToast, showToast } = useAdminCRUD('facilities', token);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
@@ -51,22 +51,27 @@ export default function FacilitiesTab({ token }) {
       name: item.name, address: item.address, phone: item.phone,
       region: item.region, gmaps: item.gmaps || '',
       from: parsed.from, to: parsed.to, days: parsed.days,
+      rating: item.rating || 5, note: item.note || '',
     });
     setModal({ mode: 'edit', id: item.id });
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.address.trim()) return;
+    if (!form.name.trim()) {
+      showToast('Vui lòng nhập tên cơ sở y tế!', 'error');
+      return;
+    }
     setSaving(true);
     const payload = {
       name: form.name,
       address: form.address,
       phone: form.phone,
-      note: '',
+      note: form.note,
       region: form.region,
       working_hours: buildHoursString(form.from, form.to, form.days),
       gmaps: form.gmaps,
       svg_type: 'clinic',
+      rating: Number(form.rating) || 5,
     };
     if (modal.mode === 'add') await create(payload);
     else await update(modal.id, payload);
@@ -76,17 +81,41 @@ export default function FacilitiesTab({ token }) {
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
 
+  const [filterRegion, setFilterRegion] = useState('Tất cả');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const currentItems = items.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const filtered = items.filter(item => filterRegion === 'Tất cả' || item.region === filterRegion);
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <div>
       <div className="admin-section-header">
         <h2>🏥 Cơ sở y tế</h2>
         <button className="admin-add-btn" onClick={openAdd}>+ Thêm cơ sở</button>
+      </div>
+
+      {/* Filter Row */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        {['Tất cả', ...REGIONS].map(r => (
+          <button
+            key={r}
+            onClick={() => { setFilterRegion(r); setPage(1); }}
+            style={{
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: '1px solid var(--admin-border)',
+              background: filterRegion === r ? 'var(--admin-accent)' : 'transparent',
+              color: filterRegion === r ? '#fff' : 'var(--admin-muted)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 600
+            }}
+          >
+            {r}
+          </button>
+        ))}
       </div>
 
       <div className="admin-table-wrap">
@@ -110,7 +139,7 @@ export default function FacilitiesTab({ token }) {
                   </td>
                 </tr>
               ))}
-              {items.length === 0 && (
+              {filtered.length === 0 && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--admin-muted)', padding: 24 }}>Không có dữ liệu</td></tr>
               )}
             </tbody>
@@ -145,48 +174,73 @@ export default function FacilitiesTab({ token }) {
           onSave={handleSave}
           saving={saving}
         >
-          <Field label="Tên cơ sở">
-            <input value={form.name} onChange={set('name')} placeholder="Tên cơ sở y tế..." />
-          </Field>
-          <Field label="Địa chỉ">
-            <input value={form.address} onChange={set('address')} placeholder="Địa chỉ đầy đủ..." />
-          </Field>
-          <Field label="Điện thoại">
-            <input value={form.phone} onChange={set('phone')} placeholder="028 xxxx xxxx" />
-          </Field>
-          <Field label="Khu vực">
-            <select value={form.region} onChange={set('region')}>
-              {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </Field>
-
-          {/* Giờ làm việc — chọn từ/đến + ngày */}
-          <Field label="Giờ làm việc">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
-              <div>
-                <label style={{ fontSize: '0.72rem', color: 'var(--admin-muted)', display: 'block', marginBottom: 4 }}>Từ giờ</label>
-                <select value={form.from} onChange={set('from')}>
-                  {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.72rem', color: 'var(--admin-muted)', display: 'block', marginBottom: 4 }}>Đến giờ</label>
-                <select value={form.to} onChange={set('to')}>
-                  {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Tên cơ sở">
+                <input value={form.name} onChange={set('name')} placeholder="Tên cơ sở y tế..." />
+              </Field>
             </div>
-            <select value={form.days} onChange={set('days')}>
-              {DAY_RANGES.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-            <div style={{ marginTop: 6, fontSize: '0.78rem', color: 'var(--admin-accent)', fontWeight: 600 }}>
-              Preview: {buildHoursString(form.from, form.to, form.days)}
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Địa chỉ">
+                <input value={form.address} onChange={set('address')} placeholder="Địa chỉ đầy đủ..." />
+              </Field>
             </div>
-          </Field>
+            
+            <Field label="Điện thoại">
+              <input value={form.phone} onChange={set('phone')} placeholder="028 xxxx xxxx" />
+            </Field>
+            <Field label="Khu vực">
+              <select value={form.region} onChange={set('region')}>
+                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </Field>
 
-          <Field label="Link Google Maps">
-            <input value={form.gmaps} onChange={set('gmaps')} placeholder="https://maps.google.com/..." />
-          </Field>
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Giờ làm việc">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 8 }}>
+                  <select value={form.from} onChange={set('from')}>
+                    {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                  <select value={form.to} onChange={set('to')}>
+                    {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                  <select value={form.days} onChange={set('days')}>
+                    {DAY_RANGES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </Field>
+            </div>
+
+            <Field label="Đánh giá (1.0 đến 5.0)">
+              <input 
+                type="number" 
+                step="0.1" 
+                min="1" 
+                max="5" 
+                value={form.rating} 
+                onChange={set('rating')} 
+                placeholder="Ví dụ: 4.7" 
+              />
+            </Field>
+            <Field label="Link Google Maps">
+              <input value={form.gmaps} onChange={set('gmaps')} placeholder="https://maps.google.com/..." />
+            </Field>
+
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Mô tả / Ghi chú">
+                <textarea 
+                  value={form.note} 
+                  onChange={set('note')} 
+                  placeholder="Mô tả chi tiết về cơ sở y tế..." 
+                  style={{
+                    width: '100%', minHeight: 60, padding: '6px 10px', borderRadius: 6,
+                    border: '1px solid var(--admin-border)', background: 'var(--admin-surface2)',
+                    color: 'var(--admin-text)', resize: 'vertical', fontFamily: 'inherit'
+                  }}
+                />
+              </Field>
+            </div>
+          </div>
         </AdminModal>
       )}
 
@@ -197,6 +251,7 @@ export default function FacilitiesTab({ token }) {
           onNo={() => setConfirmId(null)}
         />
       )}
+      {renderToast()}
     </div>
   );
 }

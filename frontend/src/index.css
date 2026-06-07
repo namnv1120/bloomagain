@@ -546,6 +546,14 @@ h1 {
   border: 1px solid rgba(93, 110, 126, 0.08);
 }
 
+.section-soft h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e2035;
+}
+
 .product-list,
 .product-grid,
 .search-results {
@@ -1628,4 +1636,76 @@ h1 {
   .facilities-grid, .articles-grid, .product-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ─── Client-side Toast ──────────────────────────────────────────────────── */
+.client-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(254, 243, 199, 0.95);
+  border: 1px solid #f59e0b;
+  color: #78350f;
+  padding: 14px 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(120, 53, 15, 0.15);
+  z-index: 11000;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  backdrop-filter: blur(8px);
+  animation: client-toast-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes client-toast-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* ─── Client Loading Screen ────────────────────────────────────────────── */
+.client-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #fdfaf7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 12000;
+}
+
+.loading-logo {
+  font-size: 3.5rem;
+  animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+.loading-text {
+  font-weight: 600;
+  color: #b55139;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  animation: loading-text-fade 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes loading-text-fade {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }

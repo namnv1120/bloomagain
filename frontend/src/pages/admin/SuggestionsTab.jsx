@@ -11,7 +11,7 @@ const KNOWLEDGE_CATS = [
 const empty = () => ({ gender: GENDERS[0], age: AGES[0], label: '', icon: '💡', category: KNOWLEDGE_CATS[0] });
 
 export default function SuggestionsTab({ token }) {
-  const { items, loading, create, update, remove } = useAdminCRUD('suggestions', token);
+  const { items, loading, create, update, remove, renderToast, showToast } = useAdminCRUD('suggestions', token);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
@@ -28,7 +28,10 @@ export default function SuggestionsTab({ token }) {
   };
 
   const handleSave = async () => {
-    if (!form.label.trim() || !form.category) return;
+    if (!form.label.trim()) {
+      showToast('Vui lòng nhập nhãn gợi ý!', 'error');
+      return;
+    }
     setSaving(true);
     if (modal.mode === 'add') await create(form);
     else await update(modal.id, form);
@@ -151,6 +154,7 @@ export default function SuggestionsTab({ token }) {
       {confirmId && (
         <ConfirmDialog message="Gợi ý này sẽ bị xoá." onYes={async () => { await remove(confirmId); setConfirmId(null); }} onNo={() => setConfirmId(null)} />
       )}
+      {renderToast()}
     </div>
   );
 }

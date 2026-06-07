@@ -9,7 +9,7 @@ const KNOWLEDGE_CATS = [
 const empty = () => ({ category: KNOWLEDGE_CATS[0], title: '', description: '' });
 
 export default function ArticlesTab({ token }) {
-  const { items, loading, create, update, remove } = useAdminCRUD('articles', token);
+  const { items, loading, create, update, remove, renderToast, showToast } = useAdminCRUD('articles', token);
   const [modal, setModal] = useState(null); // null | { mode:'add'|'edit', data }
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
@@ -20,7 +20,14 @@ export default function ArticlesTab({ token }) {
   const closeModal = () => setModal(null);
 
   const handleSave = async () => {
-    if (!form.title.trim() || !form.description.trim()) return;
+    if (!form.title.trim()) {
+      showToast('Vui lòng nhập tiêu đề bài viết!', 'error');
+      return;
+    }
+    if (!form.description.trim()) {
+      showToast('Vui lòng nhập mô tả bài viết!', 'error');
+      return;
+    }
     setSaving(true);
     if (modal.mode === 'add') await create(form);
     else await update(modal.id, form);
@@ -33,17 +40,41 @@ export default function ArticlesTab({ token }) {
     setConfirmId(null);
   };
 
+  const [filterCat, setFilterCat] = useState('Tất cả');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const currentItems = items.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const filtered = items.filter(item => filterCat === 'Tất cả' || item.category === filterCat);
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentItems = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
     <div>
       <div className="admin-section-header">
         <h2>📝 Bài viết / Kiến thức</h2>
         <button className="admin-add-btn" onClick={openAdd}>+ Thêm bài viết</button>
+      </div>
+
+      {/* Filter Row */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        {['Tất cả', ...KNOWLEDGE_CATS].map(cat => (
+          <button
+            key={cat}
+            onClick={() => { setFilterCat(cat); setPage(1); }}
+            style={{
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: '1px solid var(--admin-border)',
+              background: filterCat === cat ? 'var(--admin-accent)' : 'transparent',
+              color: filterCat === cat ? '#fff' : 'var(--admin-muted)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 600
+            }}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       <div className="admin-table-wrap">
@@ -71,7 +102,7 @@ export default function ArticlesTab({ token }) {
                   </td>
                 </tr>
               ))}
-              {items.length === 0 && (
+              {filtered.length === 0 && (
                 <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--admin-muted)', padding: 24 }}>Không có dữ liệu</td></tr>
               )}
             </tbody>
@@ -127,6 +158,7 @@ export default function ArticlesTab({ token }) {
           onNo={() => setConfirmId(null)}
         />
       )}
+      {renderToast()}
     </div>
   );
 }

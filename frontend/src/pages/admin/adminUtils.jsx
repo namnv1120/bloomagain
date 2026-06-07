@@ -6,10 +6,21 @@ const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
 export function useAdminCRUD(endpoint, token) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
 
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
   };
 
   const load = async () => {
@@ -22,23 +33,60 @@ export function useAdminCRUD(endpoint, token) {
   };
 
   const create = async (body) => {
-    await fetch(`${API_BASE}/api/admin/${endpoint}`, { method: 'POST', headers, body: JSON.stringify(body) });
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/${endpoint}`, { method: 'POST', headers, body: JSON.stringify(body) });
+      if (res.ok) {
+        showToast('Thêm mới thành công!', 'success');
+      } else {
+        showToast('Thất bại: Lỗi từ máy chủ khi thêm mới.', 'error');
+      }
+    } catch (err) {
+      showToast('Thất bại: Lỗi kết nối mạng.', 'error');
+    }
     await load();
   };
 
   const update = async (id, body) => {
-    await fetch(`${API_BASE}/api/admin/${endpoint}/${id}`, { method: 'PUT', headers, body: JSON.stringify(body) });
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/${endpoint}/${id}`, { method: 'PUT', headers, body: JSON.stringify(body) });
+      if (res.ok) {
+        showToast('Cập nhật thành công!', 'success');
+      } else {
+        showToast('Thất bại: Lỗi từ máy chủ khi cập nhật.', 'error');
+      }
+    } catch (err) {
+      showToast('Thất bại: Lỗi kết nối mạng.', 'error');
+    }
     await load();
   };
 
   const remove = async (id) => {
-    await fetch(`${API_BASE}/api/admin/${endpoint}/${id}`, { method: 'DELETE', headers });
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/${endpoint}/${id}`, { method: 'DELETE', headers });
+      if (res.ok) {
+        showToast('Xoá thành công!', 'success');
+      } else {
+        showToast('Thất bại: Lỗi từ máy chủ khi xoá.', 'error');
+      }
+    } catch (err) {
+      showToast('Thất bại: Lỗi kết nối mạng.', 'error');
+    }
     await load();
+  };
+
+  const renderToast = () => {
+    if (!toast) return null;
+    return (
+      <div className={`admin-toast ${toast.type}`}>
+        <span>{toast.message}</span>
+        <button className="admin-toast-close" onClick={() => setToast(null)}>×</button>
+      </div>
+    );
   };
 
   useEffect(() => { load(); }, []); // eslint-disable-line
 
-  return { items, loading, create, update, remove, reload: load };
+  return { items, loading, create, update, remove, reload: load, renderToast, showToast };
 }
 
 // ─── Confirm Dialog ───────────────────────────────────────────────────────────

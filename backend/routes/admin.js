@@ -10,7 +10,8 @@ const {
   Product,
   Facility,
   SupportCenter,
-  Suggestion
+  Suggestion,
+  VisitorStat
 } = require('../db/database');
 const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
 
@@ -193,10 +194,17 @@ router.get('/products', async (req, res) => {
 });
 
 router.post('/products', async (req, res) => {
-  const { category, name, price, description, link } = req.body;
+  const { category, name, price, description, link, suggested_categories } = req.body;
   if (!category || !name || !price) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
-    const result = await Product.create({ category, name, price, description: description || '', link: link || '#' });
+    const result = await Product.create({
+      category,
+      name,
+      price,
+      description: description || '',
+      link: link || '#',
+      suggested_categories: suggested_categories || []
+    });
     res.json(cleanDoc(result));
   } catch (err) {
     console.error(err);
@@ -205,9 +213,16 @@ router.post('/products', async (req, res) => {
 });
 
 router.put('/products/:id', async (req, res) => {
-  const { category, name, price, description, link } = req.body;
+  const { category, name, price, description, link, suggested_categories } = req.body;
   try {
-    await Product.findByIdAndUpdate(req.params.id, { category, name, price, description, link });
+    await Product.findByIdAndUpdate(req.params.id, {
+      category,
+      name,
+      price,
+      description,
+      link,
+      suggested_categories: suggested_categories || []
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -240,7 +255,7 @@ router.get('/facilities', async (req, res) => {
 });
 
 router.post('/facilities', async (req, res) => {
-  const { name, address, phone, note, region, working_hours, gmaps, svg_type } = req.body;
+  const { name, address, phone, note, region, working_hours, gmaps, svg_type, rating } = req.body;
   if (!name || !address || !region) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
     const result = await Facility.create({
@@ -251,7 +266,8 @@ router.post('/facilities', async (req, res) => {
       region,
       working_hours: working_hours || '',
       gmaps: gmaps || '',
-      svg_type: svg_type || 'clinic'
+      svg_type: svg_type || 'clinic',
+      rating: rating || 5
     });
     res.json(cleanDoc(result));
   } catch (err) {
@@ -261,7 +277,7 @@ router.post('/facilities', async (req, res) => {
 });
 
 router.put('/facilities/:id', async (req, res) => {
-  const { name, address, phone, note, region, working_hours, gmaps, svg_type } = req.body;
+  const { name, address, phone, note, region, working_hours, gmaps, svg_type, rating } = req.body;
   try {
     await Facility.findByIdAndUpdate(req.params.id, {
       name,
@@ -271,7 +287,8 @@ router.put('/facilities/:id', async (req, res) => {
       region,
       working_hours,
       gmaps,
-      svg_type
+      svg_type,
+      rating: rating || 5
     });
     res.json({ success: true });
   } catch (err) {
@@ -305,7 +322,7 @@ router.get('/support-centers', async (req, res) => {
 });
 
 router.post('/support-centers', async (req, res) => {
-  const { name, address, hotline, region, working_hours, gmaps, svg_type } = req.body;
+  const { name, address, hotline, region, working_hours, gmaps, svg_type, rating, note } = req.body;
   if (!name || !address || !region) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
     const result = await SupportCenter.create({
@@ -315,7 +332,9 @@ router.post('/support-centers', async (req, res) => {
       region,
       working_hours: working_hours || '',
       gmaps: gmaps || '',
-      svg_type: svg_type || 'shelter'
+      svg_type: svg_type || 'shelter',
+      rating: rating || 5,
+      note: note || ''
     });
     res.json(cleanDoc(result));
   } catch (err) {
@@ -325,7 +344,7 @@ router.post('/support-centers', async (req, res) => {
 });
 
 router.put('/support-centers/:id', async (req, res) => {
-  const { name, address, hotline, region, working_hours, gmaps, svg_type } = req.body;
+  const { name, address, hotline, region, working_hours, gmaps, svg_type, rating, note } = req.body;
   try {
     await SupportCenter.findByIdAndUpdate(req.params.id, {
       name,
@@ -334,7 +353,9 @@ router.put('/support-centers/:id', async (req, res) => {
       region,
       working_hours,
       gmaps,
-      svg_type
+      svg_type,
+      rating: rating || 5,
+      note: note || ''
     });
     res.json({ success: true });
   } catch (err) {
@@ -408,6 +429,42 @@ router.delete('/suggestions/:id', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ─── GET /api/admin/stats ── Get visitor onboarding statistics ──────────────────
+router.get('/stats', authMiddleware, async (req, res) => {
+  try {
+    const totalCount = await VisitorStat.countDocuments();
+    
+    // Group by gender
+    const genderStats = await VisitorStat.aggregate([
+      { $group: { _id: '$gender', count: { $sum: 1 } } }
+    ]);
+
+    // Group by age
+    const ageStats = await VisitorStat.aggregate([
+      { $group: { _id: '$age', count: { $sum: 1 } } }
+    ]);
+
+    // Group by gender and age combination
+    const combinedStats = await VisitorStat.aggregate([
+      { $group: { _id: { gender: '$gender', age: '$age' }, count: { $sum: 1 } } }
+    ]);
+
+    res.json({
+      total: totalCount,
+      gender: genderStats.map(item => ({ gender: item._id, count: item.count })),
+      age: ageStats.map(item => ({ age: item._id, count: item.count })),
+      combined: combinedStats.map(item => ({
+        gender: item._id.gender,
+        age: item._id.age,
+        count: item.count
+      }))
+    });
+  } catch (err) {
+    console.error('Error fetching visitor stats:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

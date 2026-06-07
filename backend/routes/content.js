@@ -7,14 +7,15 @@ const {
   Product,
   Facility,
   SupportCenter,
-  Suggestion
+  Suggestion,
+  VisitorStat
 } = require('../db/database');
 
 // ─── GET /api/knowledge ── Tất cả categories + articles + products + notes ───
 router.get('/knowledge', async (req, res) => {
   try {
     const articles = await Article.find().sort({ category: 1, createdAt: 1 });
-    const artProducts = await ArticleProduct.find().sort({ article_cat: 1 });
+    const products = await Product.find({ suggested_categories: { $exists: true, $not: { $size: 0 } } });
     const artNotes = await ArticleNote.find();
 
     // Group by category
@@ -25,9 +26,17 @@ router.get('/knowledge', async (req, res) => {
       }
       result[art.category].articles.push({ title: art.title, desc: art.description });
     }
-    for (const prod of artProducts) {
-      if (result[prod.article_cat]) {
-        result[prod.article_cat].products.push({ name: prod.name, price: prod.price, link: prod.link });
+    for (const prod of products) {
+      for (const cat of prod.suggested_categories || []) {
+        if (!result[cat]) {
+          result[cat] = { articles: [], products: [], note: '' };
+        }
+        result[cat].products.push({
+          name: prod.name,
+          price: prod.price,
+          link: prod.link,
+          desc: prod.description || ''
+        });
       }
     }
     for (const note of artNotes) {
@@ -71,7 +80,8 @@ router.get('/facilities', async (req, res) => {
       region: f.region,
       workingHours: f.working_hours,
       gmaps: f.gmaps,
-      svgType: f.svg_type
+      svgType: f.svg_type,
+      rating: f.rating || 5
     }));
     res.json(facilities);
   } catch (err) {
@@ -91,7 +101,9 @@ router.get('/support-centers', async (req, res) => {
       region: c.region,
       workingHours: c.working_hours,
       gmaps: c.gmaps,
-      svgType: c.svg_type
+      svgType: c.svg_type,
+      rating: c.rating || 5,
+      note: c.note || ''
     }));
     res.json(centers);
   } catch (err) {
@@ -120,6 +132,22 @@ router.get('/suggestions', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ─── POST /api/stats ── Record visitor gender and age selection ──────────────────
+router.post('/stats', async (req, res) => {
+  try {
+    const { gender, age } = req.body;
+    if (!gender || !age) {
+      return res.status(400).json({ error: 'Gender and Age are required' });
+    }
+    const stat = new VisitorStat({ gender, age });
+    await stat.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error saving visitor stats:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

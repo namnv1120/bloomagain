@@ -6,6 +6,8 @@ import ProductsTab from './admin/ProductsTab';
 import FacilitiesTab from './admin/FacilitiesTab';
 import SupportCentersTab from './admin/SupportCentersTab';
 import SuggestionsTab from './admin/SuggestionsTab';
+import StatsTab from './admin/StatsTab';
+import { useLocation } from '../hooks/useLocation';
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
 
@@ -15,23 +17,31 @@ const NAV_ITEMS = [
   { id: 'facilities', label: 'Cơ sở y tế', icon: '🏥' },
   { id: 'support', label: 'Trung tâm bảo trợ', icon: '🏠' },
   { id: 'suggestions', label: 'Gợi ý', icon: '💡' },
+  { id: 'stats', label: 'Thống kê', icon: '📊' },
 ];
 
 export default function AdminDashboard() {
   const [token, setToken] = useState(() => localStorage.getItem('adminToken'));
   const [adminUser, setAdminUser] = useState(() => localStorage.getItem('adminUser') || 'Admin');
-  const [activeTab, setActiveTab] = useState('articles');
-  const [counts, setCounts] = useState({});
+  const [location, navigate] = useLocation();
+
+  // Extract active tab ID from URL path (e.g. /admin/products -> products)
+  const getActiveTab = () => {
+    const parts = location.split('/');
+    const tabId = parts[2];
+    return NAV_ITEMS.some(item => item.id === tabId) ? tabId : 'articles';
+  };
+
+  const activeTab = getActiveTab();
 
   // Verify token on mount
   useEffect(() => {
     if (!token) return;
-    // Light check: try fetching articles
     fetch(`${API_BASE}/api/admin/articles`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => {
       if (!res.ok) handleLogout();
-    }).catch(() => {});
+    }).catch(() => { });
   }, [token]);
 
   const handleLogin = (t, user) => {
@@ -43,6 +53,7 @@ export default function AdminDashboard() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     setToken(null);
+    navigate('/');
   };
 
   if (!token) {
@@ -51,12 +62,13 @@ export default function AdminDashboard() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'articles':    return <ArticlesTab token={token} />;
-      case 'products':    return <ProductsTab token={token} />;
-      case 'facilities':  return <FacilitiesTab token={token} />;
-      case 'support':     return <SupportCentersTab token={token} />;
+      case 'articles': return <ArticlesTab token={token} />;
+      case 'products': return <ProductsTab token={token} />;
+      case 'facilities': return <FacilitiesTab token={token} />;
+      case 'support': return <SupportCentersTab token={token} />;
       case 'suggestions': return <SuggestionsTab token={token} />;
-      default:            return <ArticlesTab token={token} />;
+      case 'stats': return <StatsTab token={token} />;
+      default: return <ArticlesTab token={token} />;
     }
   };
 
@@ -76,7 +88,7 @@ export default function AdminDashboard() {
             <button
               key={item.id}
               className={`sidebar-nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => navigate(`/admin/${item.id}`)}
             >
               <span className="nav-icon">{item.icon}</span>
               {item.label}
@@ -86,10 +98,10 @@ export default function AdminDashboard() {
 
         <div className="sidebar-footer">
           <div style={{ fontSize: '0.75rem', color: 'var(--admin-muted)', marginBottom: 10 }}>
-            Đăng nhập với: <strong style={{ color: 'var(--admin-text)' }}>{adminUser}</strong>
+            Đăng nhập với: <strong style={{ color: 'white' }}>{adminUser}</strong>
           </div>
           <button className="sidebar-logout-btn" onClick={handleLogout}>
-            🚪 Đăng xuất
+            Đăng xuất
           </button>
         </div>
       </aside>
