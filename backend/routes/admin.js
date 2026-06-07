@@ -469,4 +469,58 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 });
 
+
+// ─── POST /api/admin/cleanup-old-ages ── XOÁ DỮ LIỆU TUỔI CŨ (endpoint tạm thời) ──
+router.post('/cleanup-old-ages', async (req, res) => {
+  const OLD_AGES = ['25-32 tuổi', '33-40 tuổi'];
+  try {
+    const delSuggestions = await Suggestion.deleteMany({ age: { $in: OLD_AGES } });
+    const delStats = await VisitorStat.deleteMany({ age: { $in: OLD_AGES } });
+
+    // Seed lại nhóm 'Khác' nếu chưa có
+    const newSuggestions = {
+      'Nam': { 'Khác': [
+        { label: 'Kế hoạch hóa gia đình cho nam giới', icon: '👨‍👩‍👦', category: 'Biện pháp tránh thai' },
+        { label: 'Quản lý stress & testosterone', icon: '💪', category: 'Bài tập hỗ trợ (xương, hormone)' },
+        { label: 'Khám sức khỏe sinh sản định kỳ', icon: '🏥', category: 'Tình dục an toàn' }
+      ]},
+      'Nữ': { 'Khác': [
+        { label: 'Đặt vòng hay uống thuốc tránh thai?', icon: '💊', category: 'Biện pháp tránh thai' },
+        { label: 'PCOS là gì và ảnh hưởng như thế nào?', icon: '⚕️', category: 'Chăm sóc cơ thể' },
+        { label: 'Sức khỏe khi mang thai lần đầu', icon: '🤱', category: 'Tình dục an toàn' }
+      ]},
+      'LGBTQ+': { 'Khác': [
+        { label: 'Quyền của người LGBT tại Việt Nam', icon: '⚖️', category: 'Giáo dục giới tính' },
+        { label: 'Hỗ trợ tâm lý cặp đôi cùng giới', icon: '💑', category: 'Tâm lý yêu đương tuổi học trò' },
+        { label: 'Chăm sóc sức khoẻ khi sử dụng hormone', icon: '💊', category: 'Chăm sóc cơ thể' }
+      ]}
+    };
+
+    let seeded = 0;
+    for (const [gender, ageGroups] of Object.entries(newSuggestions)) {
+      for (const [age, items] of Object.entries(ageGroups)) {
+        const existing = await Suggestion.countDocuments({ gender, age });
+        if (existing === 0) {
+          for (const item of items) {
+            await Suggestion.create({ gender, age, label: item.label, icon: item.icon, category: item.category });
+            seeded++;
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      deletedSuggestions: delSuggestions.deletedCount,
+      deletedStats: delStats.deletedCount,
+      seededNew: seeded,
+      message: `Đã xoá ${delSuggestions.deletedCount} gợi ý cũ, ${delStats.deletedCount} thống kê cũ. Seed ${seeded} gợi ý mới.`
+    });
+  } catch (err) {
+    console.error('Cleanup error:', err);
+    res.status(500).json({ error: 'Cleanup thất bại', detail: err.message });
+  }
+});
+
 module.exports = router;
+
