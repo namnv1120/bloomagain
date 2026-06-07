@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAdminCRUD, ConfirmDialog, AdminModal, Field } from './adminUtils';
 
 const GENDERS = ['Nam', 'Nữ', 'LGBTQ+'];
-const AGES = ['13-17 tuổi', '18-24 tuổi', '25-32 tuổi', '33-40 tuổi'];
+const AGES = ['13-17 tuổi', '18-24 tuổi', 'Khác'];
 const KNOWLEDGE_CATS = [
   'Giáo dục giới tính', 'Tâm sinh lý tuổi dậy thì', 'Tâm lý yêu đương tuổi học trò',
   'Biện pháp tránh thai', 'Chăm sóc cơ thể', 'Tình dục an toàn', 'Bài tập hỗ trợ (xương, hormone)'

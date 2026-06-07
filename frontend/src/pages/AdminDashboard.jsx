@@ -108,11 +108,6 @@ export default function AdminDashboard() {
 
       {/* Main */}
       <div className="admin-main">
-        <header className="admin-topbar">
-          <h3>{currentNav?.icon} {currentNav?.label}</h3>
-          <span className="admin-topbar-meta">Bloom Again CMS • {new Date().toLocaleDateString('vi-VN')}</span>
-        </header>
-
         <main className="admin-content">
           {renderTab()}
         </main>

@@ -148,7 +148,7 @@ function App() {
     setShowOnboarding(true);
   };
 
-  // Run Local Search
+  // Run Local Search — dùng data từ API (đã load), fallback về staticData nếu chưa có
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const q = searchQuery.trim().toLowerCase();
@@ -159,32 +159,32 @@ function App() {
 
     const results = [];
     // Search Knowledge Articles
-    Object.entries(staticData.knowledge).forEach(([category, info]) => {
+    Object.entries(knowledge).forEach(([category, info]) => {
       info.articles.forEach(article => {
-        if (article.title.toLowerCase().includes(q) || article.desc.toLowerCase().includes(q)) {
+        if (article.title.toLowerCase().includes(q) || (article.desc || article.description || '').toLowerCase().includes(q)) {
           results.push({ type: 'Kiến thức', title: article.title, meta: category });
         }
       });
     });
 
     // Search Products
-    Object.entries(staticData.productCategories).forEach(([category, products]) => {
+    Object.entries(productCategoriesData).forEach(([category, products]) => {
       products.forEach(product => {
-        if (product.name.toLowerCase().includes(q) || product.desc.toLowerCase().includes(q)) {
+        if (product.name.toLowerCase().includes(q) || (product.desc || product.description || '').toLowerCase().includes(q)) {
           results.push({ type: 'Sản phẩm', title: product.name, meta: category });
         }
       });
     });
 
     // Search Health Facilities
-    staticData.healthFacilities.forEach(item => {
+    healthFacilitiesData.forEach(item => {
       if (item.name.toLowerCase().includes(q) || item.address.toLowerCase().includes(q)) {
         results.push({ type: 'Cơ sở y tế', title: item.name, meta: item.address });
       }
     });
 
     // Search Support Centers
-    staticData.supportCenters.forEach(item => {
+    supportCentersData.forEach(item => {
       if (item.name.toLowerCase().includes(q) || item.address.toLowerCase().includes(q)) {
         results.push({ type: 'Bảo trợ trẻ em', title: item.name, meta: item.address });
       }
@@ -195,6 +195,7 @@ function App() {
     setShowSearchResults(true);
     navigate('/');
   };
+
 
   // Chat submit logic interacting with Express backend
   const handleChatSubmit = async (e) => {
@@ -338,7 +339,7 @@ function App() {
               <div className="question">
                 <h3>Độ tuổi</h3>
                 <div className="choice-grid age">
-                  {['13-17 tuổi', '18-24 tuổi', '25-32 tuổi', '33-40 tuổi'].map(a => (
+                  {['13-17 tuổi', '18-24 tuổi', 'Khác'].map(a => (
                     <button
                       key={a}
                       className={`choice ageChoice ${tempAge === a ? 'active' : ''}`}
@@ -402,7 +403,7 @@ function App() {
                 Sản phẩm
               </button>
               <div className="dropdown-menu">
-                {Object.keys(staticData.productCategories).map(cat => (
+                {Object.keys(productCategoriesData).map(cat => (
                   <button
                     key={cat}
                     className="dropdown-item"

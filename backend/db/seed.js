@@ -140,15 +140,10 @@ const staticData = {
         { label: 'Dấu hiệu rối loạn nội tiết ở nam', icon: '⚕️', category: 'Tâm sinh lý tuổi dậy thì' },
         { label: 'Xuất tinh sớm phải làm sao?', icon: '❓', category: 'Tình dục an toàn' }
       ],
-      '25-32 tuổi': [
+      'Khác': [
         { label: 'Kế hoạch hóa gia đình cho nam giới', icon: '👨‍👩‍👦', category: 'Biện pháp tránh thai' },
         { label: 'Quản lý stress & testosterone', icon: '💪', category: 'Bài tập hỗ trợ (xương, hormone)' },
         { label: 'Khám sức khỏe sinh sản định kỳ', icon: '🏥', category: 'Tình dục an toàn' }
-      ],
-      '33-40 tuổi': [
-        { label: 'Suy giảm testosterone: dấu hiệu và cách xử lý', icon: '📉', category: 'Tâm sinh lý tuổi dậy thì' },
-        { label: 'Vận động giúp cân bằng nội tiết', icon: '🏃', category: 'Bài tập hỗ trợ (xương, hormone)' },
-        { label: 'Khám tiền hôn nhân toàn diện', icon: '💍', category: 'Tình dục an toàn' }
       ]
     },
     'Nữ': {
@@ -162,15 +157,10 @@ const staticData = {
         { label: 'Top 3 dung dịch vệ sinh bác sĩ khuyên dùng', icon: '🏆', category: 'Chăm sóc cơ thể' },
         { label: 'Biện pháp tránh thai phù hợp cho tuổi 18-24', icon: '🛡️', category: 'Biện pháp tránh thai' }
       ],
-      '25-32 tuổi': [
+      'Khác': [
         { label: 'Đặt vòng hay uống thuốc tránh thai?', icon: '💊', category: 'Biện pháp tránh thai' },
         { label: 'PCOS là gì và ảnh hưởng như thế nào?', icon: '⚕️', category: 'Chăm sóc cơ thể' },
         { label: 'Sức khỏe khi mang thai lần đầu', icon: '🤱', category: 'Tình dục an toàn' }
-      ],
-      '33-40 tuổi': [
-        { label: 'Tiền mãn kinh sớm có thể xảy ra không?', icon: '📊', category: 'Tâm sinh lý tuổi dậy thì' },
-        { label: 'Loãng xương & nội tiết nữ sau 35', icon: '🦴', category: 'Bài tập hỗ trợ (xương, hormone)' },
-        { label: '10 biểu hiện rối loạn nội tiết tố', icon: '⚠️', category: 'Tâm sinh lý tuổi dậy thì' }
       ]
     },
     'LGBTQ+': {
@@ -184,15 +174,10 @@ const staticData = {
         { label: 'Cơ sở y tế thân thiện với LGBT', icon: '🏥', category: 'Tình dục an toàn' },
         { label: 'Hỗ trợ tâm lý giới tính', icon: '💙', category: 'Tâm sinh lý tuổi dậy thì' }
       ],
-      '25-32 tuổi': [
+      'Khác': [
         { label: 'Quyền của người LGBT tại Việt Nam', icon: '⚖️', category: 'Giáo dục giới tính' },
         { label: 'Hỗ trợ tâm lý cặp đôi cùng giới', icon: '💑', category: 'Tâm lý yêu đương tuổi học trò' },
         { label: 'Chăm sóc sức khoẻ khi sử dụng hormone', icon: '💊', category: 'Chăm sóc cơ thể' }
-      ],
-      '33-40 tuổi': [
-        { label: 'Sức khoẻ lâu dài khi dùng liệu pháp hormone', icon: '⚕️', category: 'Bài tập hỗ trợ (xương, hormone)' },
-        { label: 'Sức khoẻ tâm thần & hạnh phúc trung niên', icon: '🧠', category: 'Tâm sinh lý tuổi dậy thì' },
-        { label: 'Xây dựng gia đình trong cộng đồng LGBT', icon: '🏠', category: 'Giáo dục giới tính' }
       ]
     }
   }
