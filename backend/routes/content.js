@@ -24,7 +24,12 @@ router.get('/knowledge', async (req, res) => {
       if (!result[art.category]) {
         result[art.category] = { articles: [], products: [], note: '' };
       }
-      result[art.category].articles.push({ title: art.title, desc: art.description });
+      result[art.category].articles.push({
+        title: art.title,
+        desc: art.description,
+        imageUrl: art.imageUrl || '',
+        link: art.link || ''
+      });
     }
     for (const prod of products) {
       for (const cat of prod.suggested_categories || []) {

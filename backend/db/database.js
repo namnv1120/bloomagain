@@ -59,7 +59,9 @@ const adminUserSchema = new mongoose.Schema({
 const articleSchema = new mongoose.Schema({
   category: { type: String, required: true },
   title: { type: String, required: true },
-  description: { type: String, required: true }
+  description: { type: String, required: true },
+  imageUrl: { type: String, default: '' },
+  link: { type: String, default: '' }
 }, { 
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
 });

@@ -77,10 +77,16 @@ router.get('/articles', async (req, res) => {
 });
 
 router.post('/articles', async (req, res) => {
-  const { category, title, description } = req.body;
+  const { category, title, description, imageUrl, link } = req.body;
   if (!category || !title || !description) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
-    const result = await Article.create({ category, title, description });
+    const result = await Article.create({
+      category,
+      title,
+      description,
+      imageUrl: imageUrl || '',
+      link: link || ''
+    });
     res.json(cleanDoc(result));
   } catch (err) {
     console.error(err);
@@ -89,9 +95,15 @@ router.post('/articles', async (req, res) => {
 });
 
 router.put('/articles/:id', async (req, res) => {
-  const { category, title, description } = req.body;
+  const { category, title, description, imageUrl, link } = req.body;
   try {
-    await Article.findByIdAndUpdate(req.params.id, { category, title, description });
+    await Article.findByIdAndUpdate(req.params.id, {
+      category,
+      title,
+      description,
+      imageUrl: imageUrl || '',
+      link: link || ''
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);

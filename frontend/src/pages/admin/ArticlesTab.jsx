@@ -6,7 +6,7 @@ const KNOWLEDGE_CATS = [
   'Biện pháp tránh thai', 'Chăm sóc cơ thể', 'Tình dục an toàn', 'Bài tập hỗ trợ (xương, hormone)'
 ];
 
-const empty = () => ({ category: KNOWLEDGE_CATS[0], title: '', description: '' });
+const empty = () => ({ category: KNOWLEDGE_CATS[0], title: '', description: '', imageUrl: '', link: '' });
 
 export default function ArticlesTab({ token }) {
   const { items, loading, create, update, remove, renderToast, showToast } = useAdminCRUD('articles', token);
@@ -16,7 +16,7 @@ export default function ArticlesTab({ token }) {
   const [confirmId, setConfirmId] = useState(null);
 
   const openAdd = () => { setForm(empty()); setModal({ mode: 'add' }); };
-  const openEdit = (item) => { setForm({ category: item.category, title: item.title, description: item.description }); setModal({ mode: 'edit', id: item.id }); };
+  const openEdit = (item) => { setForm({ category: item.category, title: item.title, description: item.description, imageUrl: item.imageUrl || '', link: item.link || '' }); setModal({ mode: 'edit', id: item.id }); };
   const closeModal = () => setModal(null);
 
   const handleSave = async () => {
@@ -82,18 +82,36 @@ export default function ArticlesTab({ token }) {
           <table className="admin-table">
             <thead>
               <tr>
+                <th>Ảnh</th>
                 <th>Danh mục</th>
                 <th>Tiêu đề</th>
                 <th>Mô tả</th>
+                <th>Link</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.map(item => (
                 <tr key={item.id}>
+                  <td>
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
+                    ) : (
+                      <span style={{ fontSize: '1.2rem' }}>🖼️</span>
+                    )}
+                  </td>
                   <td><span className="admin-badge">{item.category}</span></td>
                   <td title={item.title}>{item.title}</td>
                   <td title={item.description}>{item.description}</td>
+                  <td>
+                    {item.link ? (
+                      <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--admin-accent)', fontWeight: 600, textDecoration: 'none' }}>
+                        Xem ↗
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--admin-muted)' }}>-</span>
+                    )}
+                  </td>
                   <td>
                     <div className="admin-action-btns">
                       <button className="admin-edit-btn" onClick={() => openEdit(item)}>Sửa</button>
@@ -103,7 +121,7 @@ export default function ArticlesTab({ token }) {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--admin-muted)', padding: 24 }}>Không có dữ liệu</td></tr>
+                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--admin-muted)', padding: 24 }}>Không có dữ liệu</td></tr>
               )}
             </tbody>
           </table>
@@ -147,6 +165,12 @@ export default function ArticlesTab({ token }) {
           </Field>
           <Field label="Mô tả ngắn">
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Mô tả ngắn về bài viết..." />
+          </Field>
+          <Field label="Link ảnh bài viết (URL)">
+            <input value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://example.com/image.jpg" />
+          </Field>
+          <Field label="Link bài viết chi tiết (URL)">
+            <input value={form.link} onChange={e => setForm(f => ({ ...f, link: e.target.value }))} placeholder="https://example.com/article-detail" />
           </Field>
         </AdminModal>
       )}

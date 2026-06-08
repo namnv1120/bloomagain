@@ -75,16 +75,49 @@ export default function Knowledge({
           <div className="grid-2 mtop" style={{ alignItems: 'start' }}>
             <div className="articles-grid">
               {(currentKnowledge?.articles || []).map((article, idx) => (
-                <article key={idx} className="card">
-                  <div className="img-placeholder" style={{ height: '140px', background: '#f8ece6', display: 'grid', placeItems: 'center', color: '#b55139', fontWeight: 600 }}>Ảnh bài viết</div>
-                  <div className="card-body">
-                    <h3>{article.title}</h3>
-                    <p>{article.desc}</p>
+                <article key={idx} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+                  <div>
+                    {article.imageUrl ? (
+                      <img 
+                        src={article.imageUrl} 
+                        alt={article.title} 
+                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '22px 22px 0 0', display: 'block' }} 
+                      />
+                    ) : (
+                      <div className="img-placeholder" style={{ height: '140px', background: '#f8ece6', display: 'grid', placeItems: 'center', color: '#b55139', fontWeight: 600 }}>Ảnh bài viết</div>
+                    )}
+                    <div className="card-body">
+                      <h3>{article.title}</h3>
+                      <p>{article.desc}</p>
+                    </div>
                   </div>
+                  {article.link && (
+                    <div style={{ padding: '0 18px 18px 18px', marginTop: 'auto' }}>
+                      <a 
+                        href={article.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          color: '#b55139',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          textDecoration: 'none',
+                          transition: 'opacity 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.opacity = '0.75'}
+                        onMouseOut={(e) => e.target.style.opacity = '1'}
+                      >
+                        Đọc bài viết chi tiết ↗
+                      </a>
+                    </div>
+                  )}
                 </article>
               ))}
               {(!currentKnowledge?.articles || currentKnowledge.articles.length === 0) && (
-                <div style={{ textAlign: 'center', color: '#566474', padding: 32 }}>Chưa có bài viết nào trong danh mục này.</div>
+                <div style={{ textAlign: 'center', color: '#566474', padding: 32, gridColumn: 'span 2' }}>Chưa có bài viết nào trong danh mục này.</div>
               )}
             </div>
             <aside className="section-soft">
