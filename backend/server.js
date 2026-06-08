@@ -94,18 +94,15 @@ app.post('/api/chat', async (req, res) => {
     }
   }
 
-  // Otherwise check for Groq API
-  const groqKey = process.env.GROQ_API_KEY;
-  const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-  if (groqKey) {
+  // Otherwise check for Gemini API
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const geminiModel = process.env.GEMINI_MODEL;
+  if (geminiKey) {
     try {
-      const url = 'https://api.groq.com/openai/v1/chat/completions';
-      
-      // Map chat history to OpenAI/Groq format
-      const messages = [
-        {
-          role: 'system',
-          content: process.env.SYSTEM_PROMPT || `# ROLE & IDENTITY
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(geminiKey);
+
+      const systemPrompt = process.env.SYSTEM_PROMPT || `# ROLE & IDENTITY
 - You are Bloom – a deeply trusted, warm, and close companion, older sibling figure, or psychological coach.
 - You must always refer to yourself as "Bloom" and address the user with affectionate, age-appropriate, and context-specific terms in Vietnamese (bạn, cậu...) to foster a deep, family-like connection.
 
@@ -195,48 +192,44 @@ Bloom: Bloom thầy hình như cậu đang hơi hoang mang về cơ thể mình 
 
 # Conciseness & Completeness Rule: Responses must be concise, ideally between 3 to 5 short sentences, while still ensuring all necessary ideas and key points are fully and clearly addressed.
 
-#User Addressing Rule: Always address the user as "cậu" in every response to maintain a warm, consistent, and companion-like relationship.`
-        }
-      ];
+#User Addressing Rule: Always address the user as "cậu" in every response to maintain a warm, consistent, and companion-like relationship.`;
 
-      (chatHistory || []).forEach(msg => {
-        // Exclude system instructions or offline notes in history if any
-        if (!msg.content.startsWith('[Lỗi hệ thống]') && !msg.content.startsWith('[Chế độ offline]')) {
-          messages.push({
-            role: msg.role === 'user' ? 'user' : 'assistant',
-            content: msg.content
-          });
-        }
-      });
-
-      messages.push({ role: 'user', content: message });
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: groqModel,
-          messages,
+      const model = genAI.getGenerativeModel({
+        model: geminiModel,
+        systemInstruction: systemPrompt,
+        generationConfig: {
           temperature: 0.7,
-          max_tokens: 800
-        })
+          maxOutputTokens: 300
+        }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content;
-        if (reply) {
-          return res.json({ reply });
-        }
-      } else {
-        const errText = await response.text();
-        console.error('Groq error:', errText);
+      // Map chat history to Gemini format (exclude system/offline messages)
+      let history = (chatHistory || [])
+        .filter(msg => !msg.content.startsWith('[Lỗi hệ thống]') && !msg.content.startsWith('[Chế độ offline]'))
+        .map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        }));
+
+      // Gemini requires history to start with 'user' role
+      while (history.length > 0 && history[0].role !== 'user') {
+        history.shift();
+      }
+
+      // Gemini requires alternating user/model turns — drop trailing unpaired messages
+      if (history.length > 0 && history[history.length - 1].role === 'user') {
+        history.pop();
+      }
+
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(message);
+      const reply = result.response.text();
+
+      if (reply) {
+        return res.json({ reply });
       }
     } catch (err) {
-      console.error('Groq call failed:', err);
+      console.error('Gemini call failed:', err);
     }
   }
 
