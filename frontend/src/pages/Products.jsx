@@ -27,10 +27,14 @@ export default function Products({
     }
   };
 
+  // Gộp tất cả sản phẩm khi chọn "Tất cả"
+  const allProducts = Object.values(productCategoriesData || {}).flat();
+  const activeProducts = productCategory === 'Tất cả' ? allProducts : currentProducts;
+
   const ITEMS_PER_PAGE = 12;
-  const totalItems = currentProducts?.length || 0;
+  const totalItems = activeProducts?.length || 0;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-  const displayedProducts = (currentProducts || []).slice(
+  const displayedProducts = (activeProducts || []).slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -52,6 +56,12 @@ export default function Products({
           </div>
         </div>
         <div className="chips">
+          <button
+            className={`chip ${'Tất cả' === productCategory ? 'active' : ''}`}
+            onClick={() => setProductCategory('Tất cả')}
+          >
+            Tất cả
+          </button>
           {categoriesList.map(name => (
             <button
               key={name}

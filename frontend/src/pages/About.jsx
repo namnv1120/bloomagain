@@ -5,12 +5,12 @@ export default function About() {
     <div className="page active">
       <div className="about-hero">
         <div className="about-hero-text">
-          <div className="eyebrow">🌸 Câu chuyện của chúng tôi</div>
+          <div className="eyebrow"><img src="/logo.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain', verticalAlign: 'middle', marginRight: '4px' }} /> Câu chuyện của chúng tôi</div>
           <h1 className="about-title">Về Bloom Again</h1>
           <p className="about-subtitle">Chúng tôi tin rằng mọi bạn trẻ đều xứng đáng được tiếp cận kiến thức đúng đắn về giới tính và sức khỏe tâm lý, trong một không gian an toàn, thân thiện và không phán xét.</p>
         </div>
         <div className="about-badge-wrap">
-          <div className="about-badge">🌼</div>
+          <div className="about-badge"><img src="/logo.png" alt="Bloom Again" style={{ width: '160px', height: '160px', objectFit: 'contain' }} /></div>
         </div>
       </div>
 

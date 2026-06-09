@@ -38,7 +38,7 @@ export default function AdminLogin({ onLogin }) {
     <div className="admin-login-page">
       <div className="admin-login-card">
         <div className="admin-login-logo">
-          <div className="logo-icon">🌸</div>
+          <div className="logo-icon"><img src="/logo.png" alt="Bloom Again Logo" style={{ width: '56px', height: '56px', objectFit: 'contain' }} /></div>
           <h1>Bloom Again Admin</h1>
           <span>Trang quản trị nội dung</span>
         </div>

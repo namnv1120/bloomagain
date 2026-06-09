@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function Home({
   gender,
@@ -14,6 +14,21 @@ export default function Home({
   handleHomeChatOpen,
   navigate
 }) {
+  const [framesReady, setFramesReady] = useState(false);
+
+  useEffect(() => {
+    let loaded = 0;
+    const total = 10;
+    for (let i = 1; i <= total; i++) {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === total) setFramesReady(true);
+      };
+      img.src = `/${i}.png`;
+    }
+  }, []);
+
   return (
     <div className="page active">
       <div className="hero">
@@ -22,18 +37,18 @@ export default function Home({
           <h1>Đồng hành cùng tuổi trẻ an toàn và hiểu biết</h1>
           <p className="subtitle">Trang web giáo dục giới tính kết hợp tâm sinh lý, tạo không gian tìm hiểu nhẹ nhàng, bảo mật và không phán xét.</p>
           <div className="trustline">🔒 Bảo mật • An toàn • Hoàn toàn ẩn danh • Không phán xét</div>
-          <div className="hero-actions">
-            <button className="btn primary" onClick={() => navigate('/knowledge')} type="button">Mở Kiến thức</button>
-            <button className="btn secondary" onClick={() => navigate('/products')} type="button">Xem Sản phẩm</button>
-            <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
-              Chat với AI
-            </button>
-          </div>
+          <div className="ai-chat-cta">
+              <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
+                <span className="ai-btn-text">
+                  <span className="ai-btn-label">💬 Chat với AI ngay</span>
+                  <span className="ai-btn-sub">Hỏi đáp tức thì • Miễn phí • Hoàn toàn ẩn danh</span>
+                </span>
+              </button>
+            </div>
         </div>
         <div className="mascot-wrap">
-          <div className="mascot" aria-hidden="true">
-            <div className="flower">🌼</div>
-            <div className="face">◠‿◠</div>
+          <div className="mascot-sprite" aria-hidden="true">
+            <div className={`mascot-frame ${framesReady ? 'animate' : ''}`} id="mascotAnimator" />
           </div>
         </div>
       </div>

@@ -72,7 +72,23 @@ function App() {
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
+  const [chatHistory, setChatHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bloomAgainChat');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Tự động lưu chatHistory vào localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('bloomAgainChat', JSON.stringify(chatHistory));
+    } catch (err) {
+      console.warn('Lỗi khi lưu lịch sử chat', err);
+    }
+  }, [chatHistory]);
   const [chatInput, setChatInput] = useState('');
   const [isBotTyping, setIsBotTyping] = useState(false);
   const chatMessagesEndRef = useRef(null);
@@ -291,7 +307,7 @@ function App() {
   if (loading) {
     return (
       <div className="client-loading-screen">
-        <div className="loading-logo">🌸</div>
+        <div className="loading-logo"><img src="/logo.png" alt="Bloom Again Logo" style={{ width: '64px', height: '64px', objectFit: 'contain' }} /></div>
         <div className="loading-text">Đang tải dữ liệu...</div>
       </div>
     );
@@ -306,7 +322,7 @@ function App() {
             <div className="onboard-grid">
               <div className="onboard-top">
                 <div>
-                  <div className="eyebrow">🌸 Chào mừng đến với Bloom Again</div>
+                  <div className="eyebrow"><img src="/logo.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain', verticalAlign: 'middle', marginRight: '4px' }} /> Chào mừng đến với Bloom Again</div>
                   <h2 className="onboard-title">Chọn nhanh để cá nhân hóa nội dung, không cần thao tác rườm rà.</h2>
                 </div>
                 <div className="status-pill">
@@ -371,7 +387,7 @@ function App() {
       <header className="topbar">
         <div className="shell nav-wrap">
           <a className="brand" href="/" onClick={(e) => { e.preventDefault(); navigate('/'); setShowSearchResults(false); }}>
-            <div className="brand-mark">🌸</div>
+            <div className="brand-mark"><img src="/logo.png" alt="Bloom Again Logo" style={{ width: '64px', height: '64px', objectFit: 'contain', display: 'block' }} /></div>
             <div className="brand-text">
               <strong>Bloom Again</strong>
               <span>Giáo dục giới tính, sức khoẻ sinh sản &amp; tâm sinh lý teen</span>
@@ -399,23 +415,37 @@ function App() {
             </button>
 
             <div className="dropdown">
-              <button className={`nav-btn ${activePage === 'products' ? 'active' : ''}`} type="button">
+              <button
+                className={`nav-btn ${activePage === 'products' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setProductCategory('Tất cả');
+                  navigate('/products');
+                }}
+              >
                 Sản phẩm
               </button>
               <div className="dropdown-menu">
-                {Object.keys(productCategoriesData).map(cat => (
-                  <button
-                    key={cat}
-                    className="dropdown-item"
-                    type="button"
-                    onClick={() => {
-                      sessionStorage.setItem('bloomAgainProductCat', cat);
-                      window.location.href = '/products';
-                    }}
-                  >
-                    {cat}
-                  </button>
-                ))}
+                {(() => {
+                  const standardOrder = ['Sản phẩm giáo dục', 'Sản phẩm vệ sinh', 'Sản phẩm tránh thai', 'Sản phẩm chăm sóc cơ thể'];
+                  return Object.keys(productCategoriesData).sort((a, b) => {
+                    const ia = standardOrder.indexOf(a);
+                    const ib = standardOrder.indexOf(b);
+                    return (ia !== -1 ? ia : 99) - (ib !== -1 ? ib : 99);
+                  }).map(cat => (
+                    <button
+                      key={cat}
+                      className={`dropdown-item ${activePage === 'products' && productCategory === cat ? 'active' : ''}`}
+                      type="button"
+                      onClick={() => {
+                        setProductCategory(cat);
+                        navigate('/products');
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ));
+                })()}
               </div>
             </div>
 
@@ -424,10 +454,10 @@ function App() {
                 Giải pháp
               </button>
               <div className="dropdown-menu">
-                <button className="dropdown-item" type="button" onClick={() => { window.location.href = '/support'; }}>
+                <button className={`dropdown-item ${activePage === 'support' ? 'active' : ''}`} type="button" onClick={() => { navigate('/support'); }}>
                   Trung tâm bảo trợ trẻ em
                 </button>
-                <button className="dropdown-item" type="button" onClick={() => { window.location.href = '/health'; }}>
+                <button className={`dropdown-item ${activePage === 'health' ? 'active' : ''}`} type="button" onClick={() => { navigate('/health'); }}>
                   Cơ sở y tế
                 </button>
               </div>
@@ -508,6 +538,7 @@ function App() {
         {activePage === 'chat-fullscreen' && (
           <ChatFullscreen
             chatHistory={chatHistory}
+            setChatHistory={setChatHistory}
             isBotTyping={isBotTyping}
             chatInput={chatInput}
             setChatInput={setChatInput}
@@ -542,6 +573,17 @@ function App() {
               <span>Trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ.</span>
             </div>
             <div className="chat-header-actions">
+              {chatHistory.length > 1 && (
+                <button
+                  className="chat-maximize"
+                  onClick={() => setChatHistory([{ role: 'bot', content: 'Xin chào, mình là AI của Bloom Again. Bạn cần giúp gì? (trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ)' }])}
+                  aria-label="Đoạn chat mới"
+                  title="Bắt đầu đoạn chat mới"
+                  type="button"
+                >
+                  ✨
+                </button>
+              )}
               <button
                 className="chat-maximize"
                 onClick={handleGoFullscreenChat}

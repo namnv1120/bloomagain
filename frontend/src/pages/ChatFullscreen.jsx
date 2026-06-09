@@ -2,6 +2,7 @@ import React from 'react';
 
 export default function ChatFullscreen({
   chatHistory,
+  setChatHistory,
   isBotTyping,
   chatInput,
   setChatInput,
@@ -27,9 +28,19 @@ export default function ChatFullscreen({
               <span>Trấn an tâm lý • Tư vấn sản phẩm • Kiến thức giới tính • Tìm cơ sở y tế</span>
             </div>
           </div>
-          <div className="fs-status">
-            <span className="fs-online-dot"></span>
-            Đang hoạt động
+          <div className="fs-chat-actions">
+            {chatHistory.length > 1 && (
+              <button
+                className="btn secondary"
+                onClick={() => setChatHistory([{ role: 'bot', content: 'Xin chào, mình là AI của Bloom Again. Bạn cần giúp gì? (trấn an tâm lý, tư vấn sản phẩm, kiến thức giới tính, tìm cơ sở y tế/bảo trợ)' }])}
+                type="button"
+              >
+                ✨ Đoạn chat mới
+              </button>
+            )}
+            <button className="btn secondary" onClick={() => navigate('/')} type="button">
+              Đóng chat
+            </button>
           </div>
         </div>
 

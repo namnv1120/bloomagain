@@ -79,7 +79,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="sidebar-logo">
-          <h2>🌸 Bloom Again</h2>
+          <h2><img src="/logo.png" alt="Bloom Again Logo" style={{ width: '28px', height: '28px', objectFit: 'contain', verticalAlign: 'middle', marginRight: '8px' }} />Bloom Again</h2>
           <span>Admin Panel</span>
         </div>
 
