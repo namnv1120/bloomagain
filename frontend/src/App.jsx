@@ -322,7 +322,7 @@ function App() {
             <div className="onboard-grid">
               <div className="onboard-top">
                 <div>
-                  <div className="eyebrow"><img src="/logo.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain', verticalAlign: 'middle', marginRight: '4px' }} /> Chào mừng đến với Bloom Again</div>
+                  <div className="eyebrow"><img src="/logo-nen.png" alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%', verticalAlign: 'middle', marginRight: '6px' }} /> Chào mừng đến với Bloom Again</div>
                   <h2 className="onboard-title">Chọn nhanh để cá nhân hóa nội dung, không cần thao tác rườm rà.</h2>
                 </div>
                 <div className="status-pill">
@@ -387,7 +387,7 @@ function App() {
       <header className="topbar">
         <div className="shell nav-wrap">
           <a className="brand" href="/" onClick={(e) => { e.preventDefault(); navigate('/'); setShowSearchResults(false); }}>
-            <div className="brand-mark"><img src="/logo.png" alt="Bloom Again Logo" style={{ width: '64px', height: '64px', objectFit: 'contain', display: 'block' }} /></div>
+            <div className="brand-mark"><img src="/logo-nen.png" alt="Bloom Again Logo" style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '50%', display: 'block' }} /></div>
             <div className="brand-text">
               <strong>Bloom Again</strong>
               <span>Giáo dục giới tính, sức khoẻ sinh sản &amp; tâm sinh lý teen</span>
@@ -553,8 +553,41 @@ function App() {
       {activePage !== 'chat-fullscreen' && (
         <footer className="site-footer">
           <div className="shell footer-inner">
-            <div>Bloom Again • Giáo dục giới tính kết hợp tâm sinh lý và sức khoẻ sinh sản</div>
-            <button className="link-reset" onClick={handleResetProfile} type="button">Đổi lựa chọn onboarding</button>
+            <div className="footer-col">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); setShowSearchResults(false); }}>
+                  <img src="/logo-nen.png" alt="Bloom Again Logo" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '50%' }} />
+                </a>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#314152', textTransform: 'none', letterSpacing: 'normal' }}>Bloom Again</h3>
+                </div>
+              </div>
+              <p style={{ maxWidth: '280px', marginBottom: '8px' }}>Giáo dục giới tính kết hợp tâm sinh lý và sức khoẻ sinh sản, tạo không gian an toàn cho tuổi teen.</p>
+              <button className="link-reset" onClick={handleResetProfile} type="button" style={{ display: 'inline-block', fontWeight: 'bold' }}>Đổi lựa chọn onboarding</button>
+            </div>
+
+            <div className="footer-col">
+              <h3>Liên hệ & Hỗ trợ</h3>
+              <p style={{ maxWidth: '280px', marginBottom: '8px' }}>Hỗ trợ: 096 990 8956</p>
+              <p style={{ maxWidth: '280px', marginBottom: '8px' }}>Hợp tác: 039 361 2056</p>
+              <p style={{ maxWidth: '280px', marginBottom: '8px' }}>Email: bloomagain.antam@gmail.com</p>
+            </div>
+
+            <div className="footer-col">
+              <h3>Kết nối với chúng tôi</h3>
+              <p>Theo dõi Bloom Again để cập nhật kiến thức mỗi ngày.</p>
+              <div className="footer-socials">
+                <a href="https://www.facebook.com/share/18NCiR7yfS/?mibextid=wwXIfr" target="_blank" rel="noreferrer" className="social-btn" title="Fanpage Facebook">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22.675 0h-21.35C.597 0 0 .597 0 1.325v21.351C0 23.403.597 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.597 1.323-1.324V1.325C24 .597 23.403 0 22.675 0z" /></svg>
+                </a>
+                <a href="#" className="social-btn" title="Tiktok (Sắp ra mắt)" onClick={(e) => e.preventDefault()}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.525.02C13.835 0 15.135.01 16.445.03c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.17-3.61-5.46-.02-.47-.02-.94.02-1.41.22-1.85 1.25-3.51 2.8-4.52 1.43-.94 3.14-1.31 4.82-1.07v4.06c-1.5-.04-2.95.74-3.58 2.06-.41.87-.38 1.9.08 2.75.52.92 1.49 1.5 2.54 1.56 1.47.09 2.87-.84 3.23-2.28.16-.62.15-1.27.15-1.91V0h4.25v.02z" /></svg>
+                </a>
+                <a href="#" className="social-btn" title="Threads (Sắp ra mắt)" onClick={(e) => e.preventDefault()}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.968 1.378c-5.834 0-10.59 4.756-10.59 10.59 0 5.835 4.756 10.591 10.59 10.591 5.835 0 10.591-4.756 10.591-10.591 0-5.834-4.756-10.59-10.591-10.591zm3.565 14.156c-1.026.83-2.453 1.254-4.282 1.254-3.415 0-5.835-2.21-5.835-5.32 0-3.111 2.42-5.322 5.835-5.322 3.415 0 5.834 2.211 5.834 5.322v1.528c0 .991-.676 1.62-1.572 1.62-.897 0-1.418-.564-1.418-1.385v-.31c-.694.956-1.876 1.543-3.233 1.543-2.1 0-3.617-1.418-3.617-3.415 0-1.996 1.517-3.415 3.617-3.415 1.357 0 2.539.587 3.233 1.543v-.93h1.764v4.51c0 1.543 1.057 2.42 2.378 2.42 1.32 0 2.376-.877 2.376-2.42v-1.528c0-3.617-2.825-6.442-6.442-6.442-3.616 0-6.441 2.825-6.441 6.442 0 3.616 2.825 6.441 6.441 6.441 1.673 0 3.197-.564 4.34-1.527l-.968-1.077zm-3.565-5.617c-1.32 0-2.376 1.056-2.376 2.377 0 1.32 1.056 2.376 2.376 2.376 1.32 0 2.377-1.056 2.377-2.376 0-1.32-1.057-2.377-2.377-2.377z" /></svg>
+                </a>
+              </div>
+            </div>
           </div>
         </footer>
       )}

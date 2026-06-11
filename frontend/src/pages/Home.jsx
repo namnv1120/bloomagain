@@ -37,18 +37,35 @@ export default function Home({
           <h1>Đồng hành cùng tuổi trẻ an toàn và hiểu biết</h1>
           <p className="subtitle">Trang web giáo dục giới tính kết hợp tâm sinh lý, tạo không gian tìm hiểu nhẹ nhàng, bảo mật và không phán xét.</p>
           <div className="trustline">🔒 Bảo mật • An toàn • Hoàn toàn ẩn danh • Không phán xét</div>
-          <div className="ai-chat-cta">
-              <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
-                <span className="ai-btn-text">
-                  <span className="ai-btn-label">💬 Chat với AI ngay</span>
-                  <span className="ai-btn-sub">Hỏi đáp tức thì • Miễn phí • Hoàn toàn ẩn danh</span>
-                </span>
+          <div className="hero-actions">
+            <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
+              <span className="ai-btn-text">
+                <span className="ai-btn-label">🐧 Chat với AI Buddy ngay</span>
+                <span className="ai-btn-sub">Hỏi đáp tức thì • Miễn phí • Hoàn toàn ẩn danh</span>
+              </span>
+            </button>
+            <div className="hero-secondary-actions">
+              <button className="btn hero-btn" onClick={() => navigate('/knowledge')} type="button">
+                📚 Kiến thức
+              </button>
+              <button className="btn hero-btn" onClick={() => navigate('/products')} type="button">
+                🛍️ Sản phẩm
               </button>
             </div>
+          </div>
         </div>
         <div className="mascot-wrap">
-          <div className="mascot-sprite" aria-hidden="true">
-            <div className={`mascot-frame ${framesReady ? 'animate' : ''}`} id="mascotAnimator" />
+          <div style={{ position: 'relative', width: 'min(100%, 400px)', aspectRatio: '1' }}>
+            <div className="mascot-sprite" aria-hidden="true" style={{ width: '100%', height: '100%' }}>
+              <div className={`mascot-frame ${framesReady ? 'animate' : ''}`} id="mascotAnimator" />
+            </div>
+            <div className="mascot-bubble-wrap">
+              <span className="mascot-bubble" style={{ animationDelay: '0s' }}>Ngày hôm nay của bạn thế nào?</span>
+              <span className="mascot-bubble" style={{ animationDelay: '4s' }}>Hãy tâm sự với mình ở đây nhé.</span>
+              <span className="mascot-bubble" style={{ animationDelay: '8s' }}>Ở đây bạn luôn ẨN DANH.</span>
+              <span className="mascot-bubble" style={{ animationDelay: '12s' }}>Kiến thức, tâm sự mình đều có.</span>
+              <span className="mascot-bubble" style={{ animationDelay: '16s' }}>Khám phá Bloom Again ngay!</span>
+            </div>
           </div>
         </div>
       </div>
