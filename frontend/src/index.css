@@ -1763,9 +1763,9 @@ h1 {
   z-index: 80;
   background: rgba(255, 252, 248, 0.82);
   backdrop-filter: blur(18px);
-  display: grid;
-  place-items: center;
+  display: flex;
   padding: 18px;
+  overflow-y: auto;
   transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
@@ -1776,6 +1776,7 @@ h1 {
 }
 
 .onboard-card {
+  margin: auto;
   width: min(760px, 100%);
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(93, 110, 126, 0.08);
