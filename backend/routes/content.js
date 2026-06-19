@@ -8,7 +8,8 @@ const {
   Facility,
   SupportCenter,
   Suggestion,
-  VisitorStat
+  VisitorStat,
+  AboutPage
 } = require('../db/database');
 
 // ─── GET /api/knowledge ── Tất cả categories + articles + products + notes ───
@@ -153,6 +154,44 @@ router.post('/stats', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error saving visitor stats:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ─── GET /api/about-page ── Public: Lấy nội dung trang Về chúng tôi ────────────────
+router.get('/about-page', async (req, res) => {
+  try {
+    let doc = await AboutPage.findOne();
+    if (!doc) {
+      // Fallback: trả về dữ liệu mặc định nếu chưa có trong DB
+      return res.json({
+        eyebrow: 'Câu chuyện của chúng tôi',
+        heroTitle: 'Về Bloom Again',
+        heroSubtitle: 'Chúng tôi tin rằng mọi bạn trẻ đều xứng đáng được tiếp cận kiến thức đúng đắn về giới tính và sức khỏe tâm lý, trong một không gian an toàn, thân thiện và không phán xét.',
+        missionTitle: 'Sứ mệnh', missionText: 'Cung cấp nền tảng giáo dục giới tính toàn diện.',
+        visionTitle: 'Tầm nhìn', visionText: 'Xây dựng thế hệ trẻ Việt tự tin, hiểu biết.',
+        valuesTitle: 'Giá trị cốt lõi', valuesText: 'An toàn, bảo mật, không phán xét.',
+        teamSectionTitle: 'Đội ngũ sáng lập',
+        teamSectionSubtitle: 'Những người đã xây dựng Bloom Again với tâm huyết vì thế hệ trẻ.',
+        teamMembers: [
+          { name: 'Nguyễn Minh Anh', role: 'Nhà sáng lập & Giám đốc điều hành', emoji: '👩‍💼', desc: 'Chuyên gia tâm lý học lâm sàng với 8 năm kinh nghiệm.' },
+          { name: 'Trần Bảo Long', role: 'Giám đốc Y tế', emoji: '👨‍⚕️', desc: 'Bác sĩ chuyên khoa sản phụ khoa, 10 năm kinh nghiệm.' },
+          { name: 'Lê Thị Hương', role: 'Trưởng phòng Nội dung', emoji: '👩‍🏫', desc: 'Giáo viên và nhà văn, chuyên viết nội dung giáo dục.' }
+        ],
+        stats: [
+          { num: '10,000+', label: 'Người dùng tin tưởng' },
+          { num: '150+', label: 'Bài viết chuyên sâu' },
+          { num: '24/7', label: 'AI hỗ trợ liên tục' },
+          { num: '100%', label: 'Miễn phí & Ẩn danh' }
+        ]
+      });
+    }
+    const obj = doc.toObject();
+    if (obj._id) { obj.id = obj._id.toString(); delete obj._id; }
+    delete obj.__v;
+    res.json(obj);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });

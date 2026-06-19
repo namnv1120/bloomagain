@@ -11,7 +11,8 @@ const {
   Facility,
   SupportCenter,
   Suggestion,
-  VisitorStat
+  VisitorStat,
+  AboutPage
 } = require('../db/database');
 const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
 
@@ -476,6 +477,54 @@ router.get('/stats', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching visitor stats:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// ABOUT PAGE
+// ═══════════════════════════════════════════════════════════════════
+
+// GET /api/admin/about-page — return the single about doc (or defaults)
+router.get('/about-page', async (req, res) => {
+  try {
+    let doc = await AboutPage.findOne();
+    if (!doc) {
+      // First-time: seed default data
+      doc = await AboutPage.create({
+        teamMembers: [
+          { name: 'Nguyễn Minh Anh', role: 'Nhà sáng lập & Giám đốc điều hành', emoji: '👩‍💼', desc: 'Chuyên gia tâm lý học lâm sàng với 8 năm kinh nghiệm tư vấn cho thanh thiếu niên.' },
+          { name: 'Trần Bảo Long', role: 'Giám đốc Y tế', emoji: '👨‍⚕️', desc: 'Bác sĩ chuyên khoa sản phụ khoa, 10 năm kinh nghiệm giáo dục sức khỏe sinh sản.' },
+          { name: 'Lê Thị Hương', role: 'Trưởng phòng Nội dung', emoji: '👩‍🏫', desc: 'Giáo viên và nhà văn, chuyên viết nội dung giáo dục phù hợp với lứa tuổi teen.' }
+        ],
+        stats: [
+          { num: '10,000+', label: 'Người dùng tin tưởng' },
+          { num: '150+', label: 'Bài viết chuyên sâu' },
+          { num: '24/7', label: 'AI hỗ trợ liên tục' },
+          { num: '100%', label: 'Miễn phí & Ẩn danh' }
+        ]
+      });
+    }
+    res.json(cleanDoc(doc));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /api/admin/about-page — upsert the single about doc
+router.put('/about-page', async (req, res) => {
+  try {
+    const data = req.body;
+    let doc = await AboutPage.findOne();
+    if (doc) {
+      await AboutPage.findByIdAndUpdate(doc._id, data);
+    } else {
+      await AboutPage.create(data);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -7,6 +7,7 @@ import FacilitiesTab from './admin/FacilitiesTab';
 import SupportCentersTab from './admin/SupportCentersTab';
 import SuggestionsTab from './admin/SuggestionsTab';
 import StatsTab from './admin/StatsTab';
+import AboutTab from './admin/AboutTab';
 import { useLocation } from '../hooks/useLocation';
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { id: 'support', label: 'Trung tâm bảo trợ', icon: '🏠' },
   { id: 'suggestions', label: 'Gợi ý', icon: '💡' },
   { id: 'stats', label: 'Thống kê', icon: '📊' },
+  { id: 'about', label: 'Về chúng tôi', icon: '🌸' },
 ];
 
 export default function AdminDashboard() {
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
       case 'support': return <SupportCentersTab token={token} />;
       case 'suggestions': return <SuggestionsTab token={token} />;
       case 'stats': return <StatsTab token={token} />;
+      case 'about': return <AboutTab token={token} />;
       default: return <ArticlesTab token={token} />;
     }
   };

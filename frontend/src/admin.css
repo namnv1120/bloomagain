@@ -238,6 +238,37 @@ html, body, #root { height: 100%; font-family: 'Inter', sans-serif; background: 
 
 .admin-action-btns { display: flex; gap: 6px; }
 
+/* ─── Standalone input/textarea (used outside .admin-field) ─────────────── */
+.admin-input,
+.admin-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--admin-bg);
+  border: 1.5px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.admin-input:focus,
+.admin-textarea:focus { outline: none; border-color: var(--admin-accent); box-shadow: 0 0 0 3px var(--admin-accent-light); }
+.admin-textarea { resize: vertical; min-height: 80px; }
+
+/* ─── Action button group in table rows ──────────────────────────────────── */
+.admin-actions { display: flex; gap: 6px; }
+.admin-delete-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.1s;
+  background: var(--admin-danger-light); color: var(--admin-danger);
+}
+.admin-delete-btn:hover { background: #ffd6db; }
+
 .admin-edit-btn, .admin-del-btn {
   padding: 5px 12px;
   border-radius: 6px;

@@ -134,6 +134,36 @@ const visitorStatSchema = new mongoose.Schema({
   timestamps: { createdAt: 'created_at' } 
 });
 
+const aboutPageSchema = new mongoose.Schema({
+  // Hero section
+  eyebrow: { type: String, default: 'Câu chuyện của chúng tôi' },
+  heroTitle: { type: String, default: 'Về Bloom Again' },
+  heroSubtitle: { type: String, default: 'Chúng tôi tin rằng mọi bạn trẻ đều xứng đáng được tiếp cận kiến thức đúng đắn về giới tính và sức khỏe tâm lý, trong một không gian an toàn, thân thiện và không phán xét.' },
+  // Mission / Vision / Values
+  missionTitle: { type: String, default: 'Sứ mệnh' },
+  missionText: { type: String, default: 'Cung cấp nền tảng giáo dục giới tính toàn diện, giúp thanh thiếu niên Việt Nam hiểu rõ cơ thể, cảm xúc và quyền của bản thân một cách khoa học và gần gũi.' },
+  visionTitle: { type: String, default: 'Tầm nhìn' },
+  visionText: { type: String, default: 'Xây dựng thế hệ trẻ Việt tự tin, hiểu biết và có trách nhiệm với bản thân cũng như người xung quanh trong các mối quan hệ và sức khỏe cá nhân.' },
+  valuesTitle: { type: String, default: 'Giá trị cốt lõi' },
+  valuesText: { type: String, default: 'An toàn, bảo mật, không phán xét. Mọi thông tin đều được kiểm duyệt bởi chuyên gia y tế và tâm lý học có chứng chỉ.' },
+  // Team section
+  teamSectionTitle: { type: String, default: 'Đội ngũ sáng lập' },
+  teamSectionSubtitle: { type: String, default: 'Những người đã xây dựng Bloom Again với tâm huyết vì thế hệ trẻ.' },
+  teamMembers: [{
+    name: { type: String, required: true },
+    role: { type: String, required: true },
+    emoji: { type: String, default: '👤' },
+    desc: { type: String, default: '' }
+  }],
+  // Stats
+  stats: [{
+    num: { type: String, required: true },
+    label: { type: String, required: true }
+  }]
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
+
 // Compile models
 const AdminUser = mongoose.model('AdminUser', adminUserSchema);
 const Article = mongoose.model('Article', articleSchema);
@@ -144,6 +174,7 @@ const Facility = mongoose.model('Facility', facilitySchema);
 const SupportCenter = mongoose.model('SupportCenter', supportCenterSchema);
 const Suggestion = mongoose.model('Suggestion', suggestionSchema);
 const VisitorStat = mongoose.model('VisitorStat', visitorStatSchema);
+const AboutPage = mongoose.model('AboutPage', aboutPageSchema);
 
 module.exports = {
   mongoose,
@@ -155,5 +186,6 @@ module.exports = {
   Facility,
   SupportCenter,
   Suggestion,
-  VisitorStat
+  VisitorStat,
+  AboutPage
 };
