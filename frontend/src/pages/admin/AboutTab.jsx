@@ -28,7 +28,8 @@ export default function AboutTab({ token }) {
   // --- Team member modal state ---
   const [memberModal, setMemberModal] = useState(false);
   const [editingMemberIdx, setEditingMemberIdx] = useState(null);
-  const [memberForm, setMemberForm] = useState({ name: '', role: '', emoji: '👤', desc: '' });
+  const [memberForm, setMemberForm] = useState({ name: '', role: '', imageUrl: '', desc: '' });
+  const fileInputRef = React.useRef(null);
 
   // --- Stat modal state ---
   const [statModal, setStatModal] = useState(false);
@@ -75,7 +76,7 @@ export default function AboutTab({ token }) {
 
   // ─── Team Members ────────────────────────────────────────────────────────
   const openAddMember = () => {
-    setMemberForm({ name: '', role: '', emoji: '👤', desc: '' });
+    setMemberForm({ name: '', role: '', imageUrl: '', desc: '' });
     setEditingMemberIdx(null);
     setMemberModal(true);
   };
@@ -85,7 +86,10 @@ export default function AboutTab({ token }) {
     setMemberModal(true);
   };
   const saveMember = () => {
-    if (!memberForm.name || !memberForm.role) return;
+    if (!memberForm.name.trim() || !memberForm.role.trim()) {
+      showToast('Vui lòng nhập đầy đủ Tên và Chức danh!', 'error');
+      return;
+    }
     const members = [...(data.teamMembers || [])];
     if (editingMemberIdx !== null) {
       members[editingMemberIdx] = memberForm;
@@ -101,6 +105,33 @@ export default function AboutTab({ token }) {
     set('teamMembers', members);
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      showToast('Đang tải ảnh lên...', 'info');
+      const res = await fetch(`${API_BASE}/api/admin/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMemberForm(f => ({ ...f, imageUrl: data.url }));
+        showToast('Tải ảnh lên thành công!', 'success');
+      } else {
+        showToast('Lỗi tải ảnh lên!', 'error');
+      }
+    } catch {
+      showToast('Lỗi kết nối khi tải ảnh lên!', 'error');
+    }
+    e.target.value = '';
+  };
+
   // ─── Stats ───────────────────────────────────────────────────────────────
   const openAddStat = () => {
     setStatForm({ num: '', label: '' });
@@ -113,7 +144,10 @@ export default function AboutTab({ token }) {
     setStatModal(true);
   };
   const saveStat = () => {
-    if (!statForm.num || !statForm.label) return;
+    if (!statForm.num.trim() || !statForm.label.trim()) {
+      showToast('Vui lòng nhập đầy đủ Số/Giá trị và Nhãn mô tả!', 'error');
+      return;
+    }
     const stats = [...(data.stats || [])];
     if (editingStatIdx !== null) {
       stats[editingStatIdx] = statForm;
@@ -224,7 +258,7 @@ export default function AboutTab({ token }) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Emoji</th>
+                <th>Ảnh</th>
                 <th>Tên</th>
                 <th>Chức danh</th>
                 <th>Mô tả</th>
@@ -234,7 +268,17 @@ export default function AboutTab({ token }) {
             <tbody>
               {(data.teamMembers || []).map((m, idx) => (
                 <tr key={idx}>
-                  <td style={{ fontSize: '1.5rem', textAlign: 'center' }}>{m.emoji}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {m.imageUrl ? (
+                      <img 
+                        src={m.imageUrl.startsWith('http') ? m.imageUrl : API_BASE + m.imageUrl} 
+                        alt={m.name} 
+                        style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#eee', display: 'inline-block' }} />
+                    )}
+                  </td>
                   <td><strong>{m.name}</strong></td>
                   <td><span className="admin-badge">{m.role}</span></td>
                   <td style={{ maxWidth: 200, fontSize: '0.82rem', color: 'var(--admin-muted)' }}>{m.desc}</td>
@@ -301,8 +345,21 @@ export default function AboutTab({ token }) {
           onSave={saveMember}
           saving={false}
         >
-          <Field label="Emoji">
-            <input className="admin-input" value={memberForm.emoji} onChange={e => setMemberForm(f => ({ ...f, emoji: e.target.value }))} placeholder="VD: 👩‍💼" />
+          <Field label="Ảnh (Tải lên)">
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              {memberForm.imageUrl && (
+                <img 
+                  src={memberForm.imageUrl.startsWith('http') ? memberForm.imageUrl : API_BASE + memberForm.imageUrl} 
+                  alt="Preview" 
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} 
+                />
+              )}
+              <input type="file" accept="image/*" style={{ display: 'none' }} ref={fileInputRef} onChange={handleImageUpload} />
+              <button type="button" className="admin-save-btn" style={{ padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => fileInputRef.current?.click()}>
+                Tải ảnh từ máy
+              </button>
+            </div>
+            <input className="admin-input" style={{ marginTop: 8 }} value={memberForm.imageUrl || ''} onChange={e => setMemberForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="Hoặc dán link ảnh vào đây..." />
           </Field>
           <Field label="Tên *">
             <input className="admin-input" value={memberForm.name} onChange={e => setMemberForm(f => ({ ...f, name: e.target.value }))} placeholder="Nguyễn Minh Anh" />

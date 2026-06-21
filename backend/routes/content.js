@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   Article,
+  ArticleCategory,
   ArticleProduct,
   ArticleNote,
   Product,
@@ -12,15 +13,31 @@ const {
   AboutPage
 } = require('../db/database');
 
+// ─── GET /api/categories ── Danh sách các danh mục bài viết ─────────────────
+router.get('/categories', async (req, res) => {
+  try {
+    const cats = await ArticleCategory.find().sort({ name: 1 });
+    res.json(cats.map(c => c.name));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ─── GET /api/knowledge ── Tất cả categories + articles + products + notes ───
 router.get('/knowledge', async (req, res) => {
   try {
+    const categories = await ArticleCategory.find().sort({ name: 1 });
     const articles = await Article.find().sort({ category: 1, createdAt: 1 });
     const products = await Product.find({ suggested_categories: { $exists: true, $not: { $size: 0 } } });
     const artNotes = await ArticleNote.find();
 
-    // Group by category
+    // Group by category, initialized with db categories
     const result = {};
+    for (const cat of categories) {
+      result[cat.name] = { articles: [], products: [], note: '' };
+    }
+
     for (const art of articles) {
       if (!result[art.category]) {
         result[art.category] = { articles: [], products: [], note: '' };
@@ -29,7 +46,8 @@ router.get('/knowledge', async (req, res) => {
         title: art.title,
         desc: art.description,
         imageUrl: art.imageUrl || '',
-        link: art.link || ''
+        link: art.link || '',
+        content: art.content || ''
       });
     }
     for (const prod of products) {
@@ -87,7 +105,9 @@ router.get('/facilities', async (req, res) => {
       workingHours: f.working_hours,
       gmaps: f.gmaps,
       svgType: f.svg_type,
-      rating: f.rating || 5
+      rating: f.rating || 5,
+      imageUrl: f.imageUrl || '',
+      website: f.website || ''
     }));
     res.json(facilities);
   } catch (err) {
@@ -109,7 +129,9 @@ router.get('/support-centers', async (req, res) => {
       gmaps: c.gmaps,
       svgType: c.svg_type,
       rating: c.rating || 5,
-      note: c.note || ''
+      note: c.note || '',
+      imageUrl: c.imageUrl || '',
+      website: c.website || ''
     }));
     res.json(centers);
   } catch (err) {

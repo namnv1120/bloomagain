@@ -2,9 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 const {
   AdminUser,
   Article,
+  ArticleCategory,
   ArticleProduct,
   ArticleNote,
   Product,
@@ -15,6 +18,49 @@ const {
   AboutPage
 } = require('../db/database');
 const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
+
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Configure Cloudinary if env variables exist
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
+
+// Select storage dynamically based on environment configuration
+const storage = process.env.CLOUDINARY_CLOUD_NAME
+  ? new CloudinaryStorage({
+      cloudinary: cloudinary,
+      params: {
+        folder: 'bloomagain_uploads',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp']
+      }
+    })
+  : multer.diskStorage({
+      destination: function (req, file, cb) {
+        cb(null, path.join(__dirname, '../uploads'));
+      },
+      filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+      }
+    });
+
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ được phép tải tệp tin hình ảnh!'), false);
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // Helper to sanitize MongoDB documents for client consumption
 function cleanDoc(doc) {
@@ -78,7 +124,7 @@ router.get('/articles', async (req, res) => {
 });
 
 router.post('/articles', async (req, res) => {
-  const { category, title, description, imageUrl, link } = req.body;
+  const { category, title, description, imageUrl, link, content } = req.body;
   if (!category || !title || !description) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
     const result = await Article.create({
@@ -86,7 +132,8 @@ router.post('/articles', async (req, res) => {
       title,
       description,
       imageUrl: imageUrl || '',
-      link: link || ''
+      link: link || '',
+      content: content || ''
     });
     res.json(cleanDoc(result));
   } catch (err) {
@@ -96,20 +143,57 @@ router.post('/articles', async (req, res) => {
 });
 
 router.put('/articles/:id', async (req, res) => {
-  const { category, title, description, imageUrl, link } = req.body;
+  const { category, title, description, imageUrl, link, content } = req.body;
   try {
     await Article.findByIdAndUpdate(req.params.id, {
       category,
       title,
       description,
       imageUrl: imageUrl || '',
-      link: link || ''
+      link: link || '',
+      content: content || ''
     });
     res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// ─── Categories ──────────────────────────────────────────────────────────────
+router.get('/categories', async (req, res) => {
+  try {
+    const cats = await ArticleCategory.find().sort({ name: 1 });
+    res.json(cats.map(c => c.name));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/categories', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Thiếu tên danh mục' });
+  try {
+    const trimmed = name.trim();
+    const exists = await ArticleCategory.findOne({ name: trimmed });
+    if (exists) return res.status(400).json({ error: 'Danh mục đã tồn tại' });
+    const newCat = await ArticleCategory.create({ name: trimmed });
+    res.json(cleanDoc(newCat));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ─── Upload ──────────────────────────────────────────────────────────────────
+router.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Không tìm thấy file để tải lên' });
+  }
+  // Use Cloudinary URL if available, otherwise construct local URL
+  const fileUrl = req.file.path || `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({ url: fileUrl });
 });
 
 router.delete('/articles/:id', async (req, res) => {
@@ -268,7 +352,7 @@ router.get('/facilities', async (req, res) => {
 });
 
 router.post('/facilities', async (req, res) => {
-  const { name, address, phone, note, region, working_hours, gmaps, svg_type, rating } = req.body;
+  const { name, address, phone, note, region, working_hours, gmaps, svg_type, rating, imageUrl, website } = req.body;
   if (!name || !address || !region) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
     const result = await Facility.create({
@@ -280,7 +364,9 @@ router.post('/facilities', async (req, res) => {
       working_hours: working_hours || '',
       gmaps: gmaps || '',
       svg_type: svg_type || 'clinic',
-      rating: rating || 5
+      rating: rating || 5,
+      imageUrl: imageUrl || '',
+      website: website || ''
     });
     res.json(cleanDoc(result));
   } catch (err) {
@@ -290,7 +376,7 @@ router.post('/facilities', async (req, res) => {
 });
 
 router.put('/facilities/:id', async (req, res) => {
-  const { name, address, phone, note, region, working_hours, gmaps, svg_type, rating } = req.body;
+  const { name, address, phone, note, region, working_hours, gmaps, svg_type, rating, imageUrl, website } = req.body;
   try {
     await Facility.findByIdAndUpdate(req.params.id, {
       name,
@@ -301,7 +387,9 @@ router.put('/facilities/:id', async (req, res) => {
       working_hours,
       gmaps,
       svg_type,
-      rating: rating || 5
+      rating: rating || 5,
+      imageUrl: imageUrl || '',
+      website: website || ''
     });
     res.json({ success: true });
   } catch (err) {
@@ -335,7 +423,7 @@ router.get('/support-centers', async (req, res) => {
 });
 
 router.post('/support-centers', async (req, res) => {
-  const { name, address, hotline, region, working_hours, gmaps, svg_type, rating, note } = req.body;
+  const { name, address, hotline, region, working_hours, gmaps, svg_type, rating, note, imageUrl, website } = req.body;
   if (!name || !address || !region) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
     const result = await SupportCenter.create({
@@ -347,7 +435,9 @@ router.post('/support-centers', async (req, res) => {
       gmaps: gmaps || '',
       svg_type: svg_type || 'shelter',
       rating: rating || 5,
-      note: note || ''
+      note: note || '',
+      imageUrl: imageUrl || '',
+      website: website || ''
     });
     res.json(cleanDoc(result));
   } catch (err) {
@@ -357,7 +447,7 @@ router.post('/support-centers', async (req, res) => {
 });
 
 router.put('/support-centers/:id', async (req, res) => {
-  const { name, address, hotline, region, working_hours, gmaps, svg_type, rating, note } = req.body;
+  const { name, address, hotline, region, working_hours, gmaps, svg_type, rating, note, imageUrl, website } = req.body;
   try {
     await SupportCenter.findByIdAndUpdate(req.params.id, {
       name,
@@ -368,7 +458,9 @@ router.put('/support-centers/:id', async (req, res) => {
       gmaps,
       svg_type,
       rating: rating || 5,
-      note: note || ''
+      note: note || '',
+      imageUrl: imageUrl || '',
+      website: website || ''
     });
     res.json({ success: true });
   } catch (err) {

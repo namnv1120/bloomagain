@@ -15,9 +15,9 @@ const DEFAULT_DATA = {
   teamSectionTitle: 'Đội ngũ sáng lập',
   teamSectionSubtitle: 'Những người đã xây dựng Bloom Again với tâm huyết vì thế hệ trẻ.',
   teamMembers: [
-    { name: 'Nguyễn Minh Anh', role: 'Nhà sáng lập & Giám đốc điều hành', emoji: '👩‍💼', desc: 'Chuyên gia tâm lý học lâm sàng với 8 năm kinh nghiệm tư vấn cho thanh thiếu niên.' },
-    { name: 'Trần Bảo Long', role: 'Giám đốc Y tế', emoji: '👨‍⚕️', desc: 'Bác sĩ chuyên khoa sản phụ khoa, 10 năm kinh nghiệm giáo dục sức khỏe sinh sản.' },
-    { name: 'Lê Thị Hương', role: 'Trưởng phòng Nội dung', emoji: '👩‍🏫', desc: 'Giáo viên và nhà văn, chuyên viết nội dung giáo dục phù hợp với lứa tuổi teen.' },
+    { name: 'Nguyễn Minh Anh', role: 'Nhà sáng lập & Giám đốc điều hành', imageUrl: '', emoji: '👩‍💼', desc: 'Chuyên gia tâm lý học lâm sàng với 8 năm kinh nghiệm tư vấn cho thanh thiếu niên.' },
+    { name: 'Trần Bảo Long', role: 'Giám đốc Y tế', imageUrl: '', emoji: '👨‍⚕️', desc: 'Bác sĩ chuyên khoa sản phụ khoa, 10 năm kinh nghiệm giáo dục sức khỏe sinh sản.' },
+    { name: 'Lê Thị Hương', role: 'Trưởng phòng Nội dung', imageUrl: '', emoji: '👩‍🏫', desc: 'Giáo viên và nhà văn, chuyên viết nội dung giáo dục phù hợp với lứa tuổi teen.' },
   ],
   stats: [
     { num: '10,000+', label: 'Người dùng tin tưởng' },
@@ -88,7 +88,13 @@ export default function About() {
         <div className="team-grid">
           {pageData.teamMembers.map((member, idx) => (
             <div key={idx} className="team-card">
-              <div className="team-avatar">{member.emoji}</div>
+              <div className="team-avatar" style={{ borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {member.imageUrl ? (
+                  <img src={member.imageUrl.startsWith('http') ? member.imageUrl : API_BASE + member.imageUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  member.emoji || '👤'
+                )}
+              </div>
               <div className="team-info">
                 <strong>{member.name}</strong>
                 <span className="team-role">{member.role}</span>

@@ -35,10 +35,13 @@ function parseHoursString(str) {
   return { mode: '24/7', from: '08:00', to: '21:00', days: 'Tất cả các ngày' };
 }
 
+const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
+
 const emptyForm = () => ({
   name: '', address: '', hotline: '', region: REGIONS[0],
   hourMode: '24/7', from: '08:00', to: '21:00', days: 'Tất cả các ngày',
   gmaps: '', rating: 5, note: '',
+  imageUrl: '', website: '',
 });
 
 export default function SupportCentersTab({ token }) {
@@ -47,6 +50,7 @@ export default function SupportCentersTab({ token }) {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const fileInputRef = React.useRef(null);
 
   const openAdd = () => { setForm(emptyForm()); setModal({ mode: 'add' }); };
   const openEdit = (item) => {
@@ -56,6 +60,7 @@ export default function SupportCentersTab({ token }) {
       region: item.region, gmaps: item.gmaps || '',
       hourMode: parsed.mode, from: parsed.from, to: parsed.to, days: parsed.days,
       rating: item.rating || 5, note: item.note || '',
+      imageUrl: item.imageUrl || '', website: item.website || '',
     });
     setModal({ mode: 'edit', id: item.id });
   };
@@ -81,11 +86,40 @@ export default function SupportCentersTab({ token }) {
       svg_type: 'shelter',
       rating: Number(form.rating) || 5,
       note: form.note,
+      imageUrl: form.imageUrl,
+      website: form.website,
     };
     if (modal.mode === 'add') await create(payload);
     else await update(modal.id, payload);
     setSaving(false);
     setModal(null);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      showToast('Đang tải ảnh lên...', 'info');
+      const res = await fetch(`${API_BASE}/api/admin/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setForm(f => ({ ...f, imageUrl: data.url }));
+        showToast('Tải ảnh lên thành công!', 'success');
+      } else {
+        showToast('Lỗi tải ảnh lên!', 'error');
+      }
+    } catch {
+      showToast('Lỗi kết nối khi tải ảnh lên!', 'error');
+    }
+    e.target.value = '';
   };
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
@@ -240,6 +274,32 @@ export default function SupportCentersTab({ token }) {
             <Field label="Link Google Maps">
               <input value={form.gmaps} onChange={set('gmaps')} placeholder="https://maps.google.com/..." />
             </Field>
+            <Field label="Website trung tâm (URL)">
+              <input value={form.website} onChange={set('website')} placeholder="https://example.com" />
+            </Field>
+
+            <div style={{ gridColumn: 'span 2' }}>
+              <Field label="Ảnh trung tâm (URL) hoặc tải lên">
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://example.com/center.jpg" style={{ flex: 1 }} />
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="admin-add-btn"
+                    style={{ whiteSpace: 'nowrap', padding: '0 12px', height: '42px', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Tải ảnh từ máy
+                  </button>
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageUpload} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                />
+              </Field>
+            </div>
 
             <div style={{ gridColumn: 'span 2' }}>
               <Field label="Mô tả / Ghi chú">

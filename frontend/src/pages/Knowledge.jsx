@@ -8,6 +8,7 @@ export default function Knowledge({
 }) {
   const [toast, setToast] = useState(null);
   const [productPage, setProductPage] = useState(1);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -91,29 +92,29 @@ export default function Knowledge({
                       <p>{article.desc}</p>
                     </div>
                   </div>
-                  {article.link && (
-                    <div style={{ padding: '0 18px 18px 18px', marginTop: 'auto' }}>
-                      <a 
-                        href={article.link} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          color: '#b55139',
-                          fontWeight: 700,
-                          fontSize: '0.85rem',
-                          textDecoration: 'none',
-                          transition: 'opacity 0.2s'
-                        }}
-                        onMouseOver={(e) => e.target.style.opacity = '0.75'}
-                        onMouseOut={(e) => e.target.style.opacity = '1'}
-                      >
-                        Đọc bài viết chi tiết ↗
-                      </a>
-                    </div>
-                  )}
+                  <div style={{ padding: '0 18px 18px 18px', marginTop: 'auto' }}>
+                    <button 
+                      onClick={() => setSelectedArticle(article)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        color: '#b55139',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        textDecoration: 'none',
+                        transition: 'opacity 0.2s',
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      onMouseOver={(e) => e.target.style.opacity = '0.75'}
+                      onMouseOut={(e) => e.target.style.opacity = '1'}
+                    >
+                      Đọc bài viết chi tiết ↗
+                    </button>
+                  </div>
                 </article>
               ))}
               {(!currentKnowledge?.articles || currentKnowledge.articles.length === 0) && (
@@ -185,6 +186,127 @@ export default function Knowledge({
       {toast && (
         <div className="client-toast" role="status">
           <span>{toast}</span>
+        </div>
+      )}
+
+      {selectedArticle && (
+        <div 
+          className="article-detail-overlay" 
+          onClick={() => setSelectedArticle(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 9999,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '20px',
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <div 
+            className="article-detail-modal" 
+            onClick={e => e.stopPropagation()}
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '24px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Header Image or Placeholder */}
+            {selectedArticle.imageUrl ? (
+              <div style={{ width: '100%', height: '220px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <img 
+                  src={selectedArticle.imageUrl} 
+                  alt={selectedArticle.title} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '60%',
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.7))'
+                }} />
+              </div>
+            ) : (
+              <div style={{ width: '100%', height: '100px', background: '#f8ece6', display: 'flex', alignItems: 'center', padding: '0 32px', flexShrink: 0 }} />
+            )}
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => setSelectedArticle(null)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                color: '#333',
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                zIndex: 10
+              }}
+            >
+              ×
+            </button>
+
+            {/* Scrollable Content */}
+            <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }} className="article-modal-scroll">
+              <div style={{ marginBottom: '24px' }}>
+                <span style={{ 
+                  backgroundColor: '#f8ece6', 
+                  color: '#b55139', 
+                  padding: '5px 12px', 
+                  borderRadius: '20px', 
+                  fontSize: '0.78rem', 
+                  fontWeight: 700,
+                  display: 'inline-block',
+                  marginBottom: '10px'
+                }}>
+                  {knowledgeCategory}
+                </span>
+                <h2 style={{ fontSize: '1.7rem', color: '#1e2035', margin: '0 0 10px 0', fontWeight: 800, lineHeight: 1.3 }}>
+                  {selectedArticle.title}
+                </h2>
+                <p style={{ color: '#566474', fontStyle: 'italic', margin: 0, fontSize: '0.95rem', lineHeight: 1.45 }}>
+                  {selectedArticle.desc}
+                </p>
+              </div>
+              
+              <hr style={{ border: 'none', borderTop: '1px solid rgba(93, 110, 126, 0.12)', margin: '20px 0' }} />
+
+              <div 
+                className="article-rich-content"
+                dangerouslySetInnerHTML={{ __html: selectedArticle.content || `<p style="white-space: pre-wrap; line-height: 1.6;">${selectedArticle.desc}</p>` }}
+                style={{
+                  color: '#2d3748',
+                  fontSize: '1rem',
+                  lineHeight: '1.75'
+                }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

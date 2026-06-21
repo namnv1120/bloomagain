@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAdminCRUD, ConfirmDialog, AdminModal, Field } from './adminUtils';
+
+const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
 
 const GENDERS = ['Nam', 'Nữ', 'LGBTQ+'];
 const AGES = ['13-17 tuổi', '18-24 tuổi', 'Khác'];
-const KNOWLEDGE_CATS = [
-  'Giáo dục giới tính', 'Tâm sinh lý tuổi dậy thì', 'Tâm lý yêu đương tuổi học trò',
-  'Biện pháp tránh thai', 'Chăm sóc cơ thể', 'Tình dục an toàn', 'Bài tập hỗ trợ (xương, hormone)'
-];
 
-const empty = () => ({ gender: GENDERS[0], age: AGES[0], label: '', icon: '💡', category: KNOWLEDGE_CATS[0] });
+const empty = (cat = '') => ({ gender: GENDERS[0], age: AGES[0], label: '', icon: '💡', category: cat });
 
 export default function SuggestionsTab({ token }) {
   const { items, loading, create, update, remove, renderToast, showToast } = useAdminCRUD('suggestions', token);
@@ -20,8 +18,25 @@ export default function SuggestionsTab({ token }) {
   const [filterAge, setFilterAge] = useState('Tất cả');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const [knowledgeCats, setKnowledgeCats] = useState([]);
 
-  const openAdd = () => { setForm(empty()); setModal({ mode: 'add' }); };
+  const loadCategories = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`);
+      if (res.ok) {
+        const data = await res.json();
+        setKnowledgeCats(data);
+      }
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const openAdd = () => { setForm(empty(knowledgeCats[0] || '')); setModal({ mode: 'add' }); };
   const openEdit = (item) => {
     setForm({ gender: item.gender, age: item.age, label: item.label, icon: item.icon, category: item.category });
     setModal({ mode: 'edit', id: item.id });
@@ -145,7 +160,7 @@ export default function SuggestionsTab({ token }) {
           </Field>
           <Field label="Dẫn đến danh mục kiến thức">
             <select value={form.category} onChange={set('category')}>
-              {KNOWLEDGE_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+              {knowledgeCats.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
         </AdminModal>

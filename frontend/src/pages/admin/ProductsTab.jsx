@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAdminCRUD, ConfirmDialog, AdminModal, Field } from './adminUtils';
 
+const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
+
 const PRODUCT_CATS = ['Sản phẩm chăm sóc cơ thể', 'Sản phẩm giáo dục', 'Sản phẩm tránh thai', 'Sản phẩm vệ sinh'];
-const KNOWLEDGE_CATS = [
-  'Giáo dục giới tính', 'Tâm sinh lý tuổi dậy thì', 'Tâm lý yêu đương tuổi học trò',
-  'Biện pháp tránh thai', 'Chăm sóc cơ thể', 'Tình dục an toàn', 'Bài tập hỗ trợ (xương, hormone)'
-];
 const empty = () => ({ category: PRODUCT_CATS[0], name: '', price: '', description: '', link: '', suggested_categories: [] });
 
 export default function ProductsTab({ token }) {
@@ -14,6 +12,22 @@ export default function ProductsTab({ token }) {
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
+  const [knowledgeCats, setKnowledgeCats] = useState([]);
+
+  const loadCategories = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`);
+      if (res.ok) {
+        setKnowledgeCats(await res.json());
+      }
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   const openAdd = () => { setForm(empty()); setModal({ mode: 'add' }); };
   const openEdit = (item) => {
@@ -99,7 +113,7 @@ export default function ProductsTab({ token }) {
       {/* Filter Row 2: Suggested Knowledge Categories */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--admin-muted)', minWidth: '100px' }}>Gợi ý bài viết:</span>
-        {['Tất cả', 'Chưa có gợi ý', ...KNOWLEDGE_CATS].map(cat => (
+        {['Tất cả', 'Chưa có gợi ý', ...knowledgeCats].map(cat => (
           <button
             key={cat}
             onClick={() => { setFilterSuggest(cat); setPage(1); }}
@@ -201,7 +215,7 @@ export default function ProductsTab({ token }) {
           </Field>
           <Field label="Gợi ý cho danh mục bài viết (kho kiến thức)">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', padding: '10px', background: 'var(--admin-surface2)', borderRadius: '8px', marginTop: '6px', border: '1px solid var(--admin-border)' }}>
-              {KNOWLEDGE_CATS.map(cat => {
+              {knowledgeCats.map(cat => {
                 const checked = (form.suggested_categories || []).includes(cat);
                 return (
                   <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--admin-muted)', cursor: 'pointer' }}>

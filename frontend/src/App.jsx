@@ -576,15 +576,15 @@ function App() {
             <div className="footer-col">
               <h3>Kết nối với chúng tôi</h3>
               <p>Theo dõi Bloom Again để cập nhật kiến thức mỗi ngày.</p>
-              <div className="footer-socials">
-                <a href="https://www.facebook.com/share/18NCiR7yfS/?mibextid=wwXIfr" target="_blank" rel="noreferrer" className="social-btn" title="Fanpage Facebook">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22.675 0h-21.35C.597 0 0 .597 0 1.325v21.351C0 23.403.597 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.597 1.323-1.324V1.325C24 .597 23.403 0 22.675 0z" /></svg>
+              <div className="footer-socials" style={{ display: 'flex', gap: '12px' }}>
+                <a href="https://www.facebook.com/share/18NCiR7yfS/?mibextid=wwXIfr" target="_blank" rel="noreferrer" className="social-btn" title="Fanpage Facebook" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', backgroundColor: '#f0f2f5', borderRadius: '50%', transition: 'transform 0.2s' }}>
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" alt="Facebook" style={{ width: '28px', height: '28px' }} />
                 </a>
-                <a href="#" className="social-btn" title="Tiktok (Sắp ra mắt)" onClick={(e) => e.preventDefault()}>
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.525.02C13.835 0 15.135.01 16.445.03c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.17-3.61-5.46-.02-.47-.02-.94.02-1.41.22-1.85 1.25-3.51 2.8-4.52 1.43-.94 3.14-1.31 4.82-1.07v4.06c-1.5-.04-2.95.74-3.58 2.06-.41.87-.38 1.9.08 2.75.52.92 1.49 1.5 2.54 1.56 1.47.09 2.87-.84 3.23-2.28.16-.62.15-1.27.15-1.91V0h4.25v.02z" /></svg>
+                <a href="https://www.tiktok.com/@bloomagain_antam" target="_blank" rel="noreferrer" className="social-btn" title="Tiktok Bloom Again" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', backgroundColor: '#f0f2f5', borderRadius: '50%', transition: 'transform 0.2s' }}>
+                  <img src="https://store-images.s-microsoft.com/image/apps.3793.13634052595610511.c45457c9-b4af-46b0-8e61-8d7c0aec3f56.bbc8b3d1-941b-42c2-a610-e100e2aae247" alt="TikTok" style={{ width: '28px', height: '28px' }} />
                 </a>
-                <a href="#" className="social-btn" title="Threads (Sắp ra mắt)" onClick={(e) => e.preventDefault()}>
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.968 1.378c-5.834 0-10.59 4.756-10.59 10.59 0 5.835 4.756 10.591 10.59 10.591 5.835 0 10.591-4.756 10.591-10.591 0-5.834-4.756-10.59-10.591-10.591zm3.565 14.156c-1.026.83-2.453 1.254-4.282 1.254-3.415 0-5.835-2.21-5.835-5.32 0-3.111 2.42-5.322 5.835-5.322 3.415 0 5.834 2.211 5.834 5.322v1.528c0 .991-.676 1.62-1.572 1.62-.897 0-1.418-.564-1.418-1.385v-.31c-.694.956-1.876 1.543-3.233 1.543-2.1 0-3.617-1.418-3.617-3.415 0-1.996 1.517-3.415 3.617-3.415 1.357 0 2.539.587 3.233 1.543v-.93h1.764v4.51c0 1.543 1.057 2.42 2.378 2.42 1.32 0 2.376-.877 2.376-2.42v-1.528c0-3.617-2.825-6.442-6.442-6.442-3.616 0-6.441 2.825-6.441 6.442 0 3.616 2.825 6.441 6.441 6.441 1.673 0 3.197-.564 4.34-1.527l-.968-1.077zm-3.565-5.617c-1.32 0-2.376 1.056-2.376 2.377 0 1.32 1.056 2.376 2.376 2.376 1.32 0 2.377-1.056 2.377-2.376 0-1.32-1.057-2.377-2.377-2.377z" /></svg>
+                <a href="https://www.threads.com/@bloomagain.antam" target="_blank" rel="noreferrer" className="social-btn" title="Threads Bloom Again" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', backgroundColor: '#f0f2f5', borderRadius: '50%', transition: 'transform 0.2s' }}>
+                  <img src="https://static.vecteezy.com/system/resources/previews/031/737/194/non_2x/threads-social-media-logo-threads-icon-free-png.png" alt="Threads" style={{ width: '28px', height: '28px' }} />
                 </a>
               </div>
             </div>

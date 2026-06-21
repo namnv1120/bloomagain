@@ -938,6 +938,18 @@ h1 {
   gap: 16px;
 }
 
+@media (max-width: 900px) {
+  .facilities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .facilities-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Filter chips for regions */
 .filter-chips {
   display: flex;
@@ -1045,6 +1057,7 @@ h1 {
 }
 
 .facility-detail-panel {
+  grid-column: 1 / -1;
   margin-top: 24px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(155, 89, 182, 0.15);

@@ -41,6 +41,22 @@ mongoose.connect(MONGODB_URI)
     } catch (err) {
       console.error('❌ Error during ArticleProduct migration:', err);
     }
+
+    // Seed default categories
+    try {
+      const ArticleCategory = mongoose.model('ArticleCategory');
+      const catCount = await ArticleCategory.countDocuments();
+      if (catCount === 0) {
+        const defaultCats = [
+          'Giáo dục giới tính', 'Tâm sinh lý tuổi dậy thì', 'Tâm lý yêu đương tuổi học trò',
+          'Biện pháp tránh thai', 'Chăm sóc cơ thể', 'Tình dục an toàn', 'Bài tập hỗ trợ (xương, hormone)'
+        ];
+        await ArticleCategory.insertMany(defaultCats.map(name => ({ name })));
+        console.log('🌸 Seeded default article categories.');
+      }
+    } catch (err) {
+      console.error('❌ Error seeding categories:', err);
+    }
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err);
@@ -61,7 +77,14 @@ const articleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   imageUrl: { type: String, default: '' },
-  link: { type: String, default: '' }
+  link: { type: String, default: '' },
+  content: { type: String, default: '' }
+}, { 
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
+});
+
+const articleCategorySchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true }
 }, { 
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
 });
@@ -98,7 +121,9 @@ const facilitySchema = new mongoose.Schema({
   working_hours: { type: String, required: true },
   gmaps: { type: String },
   svg_type: { type: String, default: 'clinic' },
-  rating: { type: Number, default: 5 }
+  rating: { type: Number, default: 5 },
+  imageUrl: { type: String, default: '' },
+  website: { type: String, default: '' }
 }, { 
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
 });
@@ -112,7 +137,9 @@ const supportCenterSchema = new mongoose.Schema({
   gmaps: { type: String },
   svg_type: { type: String, default: 'shelter' },
   rating: { type: Number, default: 5 },
-  note: { type: String, default: '' }
+  note: { type: String, default: '' },
+  imageUrl: { type: String, default: '' },
+  website: { type: String, default: '' }
 }, { 
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
 });
@@ -153,6 +180,7 @@ const aboutPageSchema = new mongoose.Schema({
     name: { type: String, required: true },
     role: { type: String, required: true },
     emoji: { type: String, default: '👤' },
+    imageUrl: { type: String, default: '' },
     desc: { type: String, default: '' }
   }],
   // Stats
@@ -167,6 +195,7 @@ const aboutPageSchema = new mongoose.Schema({
 // Compile models
 const AdminUser = mongoose.model('AdminUser', adminUserSchema);
 const Article = mongoose.model('Article', articleSchema);
+const ArticleCategory = mongoose.model('ArticleCategory', articleCategorySchema);
 const ArticleProduct = mongoose.model('ArticleProduct', articleProductSchema);
 const ArticleNote = mongoose.model('ArticleNote', articleNoteSchema);
 const Product = mongoose.model('Product', productSchema);
@@ -180,6 +209,7 @@ module.exports = {
   mongoose,
   AdminUser,
   Article,
+  ArticleCategory,
   ArticleProduct,
   ArticleNote,
   Product,
