@@ -40,7 +40,7 @@ export default function Home({
           <div className="hero-actions">
             <button className="btn ai-chat-btn" onClick={handleHomeChatOpen} type="button" id="homeChatBtn">
               <span className="ai-btn-text">
-                <span className="ai-btn-label">🐧 Chat với AI Buddy ngay</span>
+                <span className="ai-btn-label">🐧 Chat với LUM ngay</span>
                 <span className="ai-btn-sub">Hỏi đáp tức thì • Miễn phí • Hoàn toàn ẩn danh</span>
               </span>
             </button>
