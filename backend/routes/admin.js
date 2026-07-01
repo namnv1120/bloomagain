@@ -59,7 +59,7 @@ const upload = multer({
       cb(new Error('Chỉ được phép tải tệp tin hình ảnh!'), false);
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // Helper to sanitize MongoDB documents for client consumption
@@ -124,16 +124,28 @@ router.get('/articles', async (req, res) => {
 });
 
 router.post('/articles', async (req, res) => {
-  const { category, title, description, imageUrl, link, content } = req.body;
+  const { category, title, description, imageUrl, link, content, isLatest } = req.body;
   if (!category || !title || !description) return res.status(400).json({ error: 'Thiếu thông tin' });
   try {
+    if (isLatest) {
+      const count = await Article.countDocuments({ isLatest: true });
+      if (count >= 3) {
+        // Auto-rotate: find and unmark the oldest featured article
+        const oldestFeatured = await Article.findOne({ isLatest: true }).sort({ updated_at: 1 });
+        if (oldestFeatured) {
+          oldestFeatured.isLatest = false;
+          await oldestFeatured.save();
+        }
+      }
+    }
     const result = await Article.create({
       category,
       title,
       description,
       imageUrl: imageUrl || '',
       link: link || '',
-      content: content || ''
+      content: content || '',
+      isLatest: !!isLatest
     });
     res.json(cleanDoc(result));
   } catch (err) {
@@ -143,15 +155,27 @@ router.post('/articles', async (req, res) => {
 });
 
 router.put('/articles/:id', async (req, res) => {
-  const { category, title, description, imageUrl, link, content } = req.body;
+  const { category, title, description, imageUrl, link, content, isLatest } = req.body;
   try {
+    if (isLatest) {
+      const count = await Article.countDocuments({ isLatest: true, _id: { $ne: req.params.id } });
+      if (count >= 3) {
+        // Auto-rotate: find and unmark the oldest featured article (excluding the current one)
+        const oldestFeatured = await Article.findOne({ isLatest: true, _id: { $ne: req.params.id } }).sort({ updated_at: 1 });
+        if (oldestFeatured) {
+          oldestFeatured.isLatest = false;
+          await oldestFeatured.save();
+        }
+      }
+    }
     await Article.findByIdAndUpdate(req.params.id, {
       category,
       title,
       description,
       imageUrl: imageUrl || '',
       link: link || '',
-      content: content || ''
+      content: content || '',
+      isLatest: !!isLatest
     });
     res.json({ success: true });
   } catch (err) {
@@ -187,13 +211,26 @@ router.post('/categories', async (req, res) => {
 });
 
 // ─── Upload ──────────────────────────────────────────────────────────────────
-router.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'Không tìm thấy file để tải lên' });
-  }
-  // Use Cloudinary URL if available, otherwise construct local URL
-  const fileUrl = req.file.path || `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl });
+router.post('/upload', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Kích thước ảnh quá lớn! Tối đa là 10MB.' });
+      }
+      return res.status(400).json({ error: `Lỗi tải ảnh lên: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không tìm thấy file để tải lên' });
+    }
+    // Use Cloudinary URL if available, otherwise construct local web URL
+    const fileUrl = process.env.CLOUDINARY_CLOUD_NAME
+      ? req.file.path
+      : `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl });
+  });
 });
 
 router.delete('/articles/:id', async (req, res) => {

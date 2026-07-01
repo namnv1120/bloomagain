@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { toSlug } from '../utils';
 
 export default function Knowledge({
   knowledge,
   knowledgeCategory,
   setKnowledgeCategory,
-  currentKnowledge
+  currentKnowledge,
+  navigate
 }) {
   const [toast, setToast] = useState(null);
   const [productPage, setProductPage] = useState(1);
-  const [selectedArticle, setSelectedArticle] = useState(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -36,6 +37,18 @@ export default function Knowledge({
     productPage * PRODUCTS_PER_PAGE
   );
 
+  // Extract latest articles
+  const latestArticles = [];
+  const seenIds = new Set();
+  Object.values(knowledge || {}).forEach(cat => {
+    (cat.articles || []).forEach(art => {
+      if (art.isLatest && art.id && !seenIds.has(art.id)) {
+        seenIds.add(art.id);
+        latestArticles.push(art);
+      }
+    });
+  });
+
   return (
     <div className="page active">
       <section className="section">
@@ -45,6 +58,48 @@ export default function Knowledge({
             <p>Chọn danh mục để xem bài viết mẫu và gợi ý sản phẩm liên quan.</p>
           </div>
         </div>
+
+        {latestArticles.length > 0 && (
+          <div style={{ marginBottom: '36px' }}>
+            <h3 style={{ fontSize: '1.2rem', color: '#1e2035', marginBottom: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              🔥 Bài viết mới nhất
+            </h3>
+            <div className="articles-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              {latestArticles.slice(0, 3).map((article, idx) => (
+                <article
+                  key={idx}
+                  className="card"
+                  onClick={() => navigate(`/article/${toSlug(article.title)}`)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    height: '100%',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div>
+                    {article.imageUrl ? (
+                      <img 
+                        src={article.imageUrl} 
+                        alt={article.title} 
+                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '22px 22px 0 0', display: 'block' }} 
+                      />
+                    ) : (
+                      <div className="img-placeholder" style={{ height: '140px', background: '#f8ece6', display: 'grid', placeItems: 'center', color: '#b55139', fontWeight: 600 }}>Ảnh bài viết</div>
+                    )}
+                    <div className="card-body">
+                      <h3>{article.title}</h3>
+                      <p>{article.desc}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.06)', margin: '32px 0 24px 0' }} />
+          </div>
+        )}
+
         <div className="chips">
           {Object.keys(knowledge || {}).map(name => (
             <button
@@ -76,7 +131,18 @@ export default function Knowledge({
           <div className="grid-2 mtop" style={{ alignItems: 'start' }}>
             <div className="articles-grid">
               {(currentKnowledge?.articles || []).map((article, idx) => (
-                <article key={idx} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+                <article
+                  key={idx}
+                  className="card"
+                  onClick={() => navigate(`/article/${toSlug(article.title)}`)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    height: '100%',
+                    cursor: 'pointer'
+                  }}
+                >
                   <div>
                     {article.imageUrl ? (
                       <img 
@@ -91,29 +157,6 @@ export default function Knowledge({
                       <h3>{article.title}</h3>
                       <p>{article.desc}</p>
                     </div>
-                  </div>
-                  <div style={{ padding: '0 18px 18px 18px', marginTop: 'auto' }}>
-                    <button 
-                      onClick={() => setSelectedArticle(article)}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        color: '#b55139',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        textDecoration: 'none',
-                        transition: 'opacity 0.2s',
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                      onMouseOver={(e) => e.target.style.opacity = '0.75'}
-                      onMouseOut={(e) => e.target.style.opacity = '1'}
-                    >
-                      Đọc bài viết chi tiết ↗
-                    </button>
                   </div>
                 </article>
               ))}
@@ -186,127 +229,6 @@ export default function Knowledge({
       {toast && (
         <div className="client-toast" role="status">
           <span>{toast}</span>
-        </div>
-      )}
-
-      {selectedArticle && (
-        <div 
-          className="article-detail-overlay" 
-          onClick={() => setSelectedArticle(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            zIndex: 9999,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '20px',
-            backdropFilter: 'blur(5px)'
-          }}
-        >
-          <div 
-            className="article-detail-modal" 
-            onClick={e => e.stopPropagation()}
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: '24px',
-              maxWidth: '800px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'hidden',
-              position: 'relative',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {/* Header Image or Placeholder */}
-            {selectedArticle.imageUrl ? (
-              <div style={{ width: '100%', height: '220px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                <img 
-                  src={selectedArticle.imageUrl} 
-                  alt={selectedArticle.title} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                />
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '60%',
-                  background: 'linear-gradient(transparent, rgba(0,0,0,0.7))'
-                }} />
-              </div>
-            ) : (
-              <div style={{ width: '100%', height: '100px', background: '#f8ece6', display: 'flex', alignItems: 'center', padding: '0 32px', flexShrink: 0 }} />
-            )}
-            
-            {/* Close Button */}
-            <button 
-              onClick={() => setSelectedArticle(null)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                color: '#333',
-                fontSize: '1.25rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-                zIndex: 10
-              }}
-            >
-              ×
-            </button>
-
-            {/* Scrollable Content */}
-            <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }} className="article-modal-scroll">
-              <div style={{ marginBottom: '24px' }}>
-                <span style={{ 
-                  backgroundColor: '#f8ece6', 
-                  color: '#b55139', 
-                  padding: '5px 12px', 
-                  borderRadius: '20px', 
-                  fontSize: '0.78rem', 
-                  fontWeight: 700,
-                  display: 'inline-block',
-                  marginBottom: '10px'
-                }}>
-                  {knowledgeCategory}
-                </span>
-                <h2 style={{ fontSize: '1.7rem', color: '#1e2035', margin: '0 0 10px 0', fontWeight: 800, lineHeight: 1.3 }}>
-                  {selectedArticle.title}
-                </h2>
-                <p style={{ color: '#566474', fontStyle: 'italic', margin: 0, fontSize: '0.95rem', lineHeight: 1.45 }}>
-                  {selectedArticle.desc}
-                </p>
-              </div>
-              
-              <hr style={{ border: 'none', borderTop: '1px solid rgba(93, 110, 126, 0.12)', margin: '20px 0' }} />
-
-              <div 
-                className="article-rich-content"
-                dangerouslySetInnerHTML={{ __html: selectedArticle.content || `<p style="white-space: pre-wrap; line-height: 1.6;">${selectedArticle.desc}</p>` }}
-                style={{
-                  color: '#2d3748',
-                  fontSize: '1rem',
-                  lineHeight: '1.75'
-                }}
-              />
-            </div>
-          </div>
         </div>
       )}
     </div>

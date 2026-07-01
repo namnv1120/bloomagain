@@ -114,7 +114,8 @@ export default function SupportCentersTab({ token }) {
         setForm(f => ({ ...f, imageUrl: data.url }));
         showToast('Tải ảnh lên thành công!', 'success');
       } else {
-        showToast('Lỗi tải ảnh lên!', 'error');
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.error || 'Lỗi tải ảnh lên!', 'error');
       }
     } catch {
       showToast('Lỗi kết nối khi tải ảnh lên!', 'error');

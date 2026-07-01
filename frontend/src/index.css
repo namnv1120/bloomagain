@@ -2140,3 +2140,17 @@ h1 {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(240, 127, 98, 0.2);
 }
+
+/* --- ARTICLE RICH CONTENT --- */
+.article-rich-content h1 { font-size: 2rem; font-weight: 800; color: #1e2035; margin: 24px 0 12px; line-height: 1.3; }
+.article-rich-content h2 { font-size: 1.6rem; font-weight: 700; color: #1e2035; margin: 20px 0 10px; line-height: 1.35; }
+.article-rich-content h3 { font-size: 1.3rem; font-weight: 700; color: #1e2035; margin: 16px 0 8px; }
+.article-rich-content h4 { font-size: 1.1rem; font-weight: 700; color: #1e2035; margin: 14px 0 6px; }
+.article-rich-content p { margin: 0 0 16px; line-height: 1.8; color: #3b4b5a; }
+.article-rich-content ul { padding-left: 24px; margin: 12px 0 16px; list-style-type: disc; }
+.article-rich-content ol { padding-left: 24px; margin: 12px 0 16px; list-style-type: decimal; }
+.article-rich-content li { margin-bottom: 8px; line-height: 1.7; color: #3b4b5a; }
+.article-rich-content blockquote { border-left: 4px solid #b55139; margin: 24px 0; padding: 16px 24px; background: #fdf6f0; border-radius: 0 12px 12px 0; font-style: italic; color: #566474; }
+.article-rich-content a { color: #b55139; text-decoration: underline; font-weight: 600; }
+.article-rich-content img { max-width: 100%; height: auto; border-radius: 12px; margin: 20px 0; display: block; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+.article-rich-content hr { border: none; border-top: 2px solid rgba(0,0,0,0.06); margin: 32px 0; }

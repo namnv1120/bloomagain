@@ -78,7 +78,8 @@ const articleSchema = new mongoose.Schema({
   description: { type: String, required: true },
   imageUrl: { type: String, default: '' },
   link: { type: String, default: '' },
-  content: { type: String, default: '' }
+  content: { type: String, default: '' },
+  isLatest: { type: Boolean, default: false }
 }, { 
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
 });

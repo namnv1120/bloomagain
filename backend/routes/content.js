@@ -43,11 +43,13 @@ router.get('/knowledge', async (req, res) => {
         result[art.category] = { articles: [], products: [], note: '' };
       }
       result[art.category].articles.push({
+        id: art._id.toString(),
         title: art.title,
         desc: art.description,
         imageUrl: art.imageUrl || '',
         link: art.link || '',
-        content: art.content || ''
+        content: art.content || '',
+        isLatest: art.isLatest || false
       });
     }
     for (const prod of products) {

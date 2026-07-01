@@ -37,13 +37,17 @@ export function useAdminCRUD(endpoint, token) {
       const res = await fetch(`${API_BASE}/api/admin/${endpoint}`, { method: 'POST', headers, body: JSON.stringify(body) });
       if (res.ok) {
         showToast('Thêm mới thành công!', 'success');
+        await load();
+        return true;
       } else {
-        showToast('Thất bại: Lỗi từ máy chủ khi thêm mới.', 'error');
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.error || 'Thất bại: Lỗi từ máy chủ khi thêm mới.', 'error');
+        return false;
       }
     } catch (err) {
       showToast('Thất bại: Lỗi kết nối mạng.', 'error');
+      return false;
     }
-    await load();
   };
 
   const update = async (id, body) => {
@@ -51,13 +55,17 @@ export function useAdminCRUD(endpoint, token) {
       const res = await fetch(`${API_BASE}/api/admin/${endpoint}/${id}`, { method: 'PUT', headers, body: JSON.stringify(body) });
       if (res.ok) {
         showToast('Cập nhật thành công!', 'success');
+        await load();
+        return true;
       } else {
-        showToast('Thất bại: Lỗi từ máy chủ khi cập nhật.', 'error');
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.error || 'Thất bại: Lỗi từ máy chủ khi cập nhật.', 'error');
+        return false;
       }
     } catch (err) {
       showToast('Thất bại: Lỗi kết nối mạng.', 'error');
+      return false;
     }
-    await load();
   };
 
   const remove = async (id) => {

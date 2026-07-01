@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppData, fetchSuggestions, API_BASE } from './hooks/useAppData';
 import { staticData } from './data/staticData'; // fallback
 import { useLocation } from './hooks/useLocation';
+import { toSlug } from './utils';
 
 // Import Page Components
 import Home from './pages/Home';
@@ -11,6 +12,7 @@ import Health from './pages/Health';
 import Support from './pages/Support';
 import About from './pages/About';
 import ChatFullscreen from './pages/ChatFullscreen';
+import ArticleDetail from './pages/ArticleDetail';
 
 function App() {
   // Navigation & Page State synchronized via URL
@@ -20,6 +22,7 @@ function App() {
   const getActivePage = () => {
     if (location === '/') return 'home';
     if (location === '/knowledge') return 'knowledge';
+    if (location.startsWith('/article/')) return 'article-detail';
     if (location === '/products') return 'products';
     if (location === '/health') return 'health';
     if (location === '/support') return 'support';
@@ -304,6 +307,28 @@ function App() {
   const currentKnowledge = knowledge ? knowledge[knowledgeCategory] : null;
   const currentProducts = productCategoriesData ? productCategoriesData[productCategory] : null;
 
+  // Find active article based on path segment ID or slug/title
+  const getActiveArticle = () => {
+    if (!location.startsWith('/article/')) return null;
+    const key = decodeURIComponent(location.substring('/article/'.length));
+    if (!knowledge) return null;
+    for (const [catName, catData] of Object.entries(knowledge)) {
+      const articles = catData.articles || [];
+      const found = articles.find(a => 
+        (a.id && a.id === key) || 
+        a.title === key ||
+        encodeURIComponent(a.title) === key ||
+        toSlug(a.title) === key
+      );
+      if (found) {
+        return { ...found, category: catName };
+      }
+    }
+    return null;
+  };
+
+  const activeArticle = getActiveArticle();
+
   if (loading) {
     return (
       <div className="client-loading-screen">
@@ -499,6 +524,15 @@ function App() {
             knowledgeCategory={knowledgeCategory}
             setKnowledgeCategory={setKnowledgeCategory}
             currentKnowledge={currentKnowledge}
+            navigate={navigate}
+          />
+        )}
+
+        {activePage === 'article-detail' && (
+          <ArticleDetail
+            article={activeArticle}
+            allKnowledge={knowledge}
+            navigate={navigate}
           />
         )}
 
