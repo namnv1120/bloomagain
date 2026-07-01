@@ -198,14 +198,19 @@ function RichEditor({ value, onChange, token, showToast }) {
   const divider = <div style={{ width: 1, height: 24, background: 'var(--admin-border)', margin: '0 4px', flexShrink: 0 }} />;
 
   return (
-    <div style={{ border: '1px solid var(--admin-border)', borderRadius: 8, overflow: 'hidden' }}>
-      {/* Toolbar — 2 hàng */}
+    <div style={{ border: '1px solid var(--admin-border)', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}>
+      {/* Toolbar — sticky 2 hàng */}
       <div style={{
         background: 'var(--admin-surface2)',
         borderBottom: '1px solid var(--admin-border)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 0
+        gap: 0,
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        flexShrink: 0,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.07)'
       }}>
 
 
@@ -405,6 +410,7 @@ function RichEditor({ value, onChange, token, showToast }) {
         onMouseUp={updateActiveFormats}
         onFocus={updateActiveFormats}
         style={{
+          flex: 1,
           minHeight: 400,
           padding: '20px 24px',
           outline: 'none',
@@ -690,7 +696,7 @@ export default function ArticlesTab({ token }) {
         </div>
 
         {/* Split Layout */}
-        <div className="admin-editor-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', minHeight: 'calc(100vh - 200px)' }}>
+        <div className="admin-editor-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
           {/* Left Form */}
           <div className="admin-editor-form" style={{ background: 'var(--admin-surface)', border: '1px solid var(--admin-border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px', overflowY: 'auto' }}>
 
@@ -755,11 +761,15 @@ export default function ArticlesTab({ token }) {
           </div>
 
           {/* Right Preview */}
-          <div className="admin-editor-preview" style={{ background: '#fff', border: '1px solid var(--admin-border)', borderRadius: '12px', padding: '32px', display: 'flex', flexDirection: 'column', overflowY: 'auto', position: 'sticky', top: 0 }}>
-            <h3 style={{ margin: '0 0 16px 0', color: '#1e2035', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-              👁️ Xem trước — giao diện hiển thị thực tế
-            </h3>
-            <div style={{ flex: 1 }}>
+          <div className="admin-editor-preview" style={{ background: '#fff', border: '1px solid var(--admin-border)', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflowY: 'auto', position: 'sticky', top: '16px', maxHeight: 'calc(100vh - 40px)' }}>
+            {/* Sticky preview header */}
+            <div style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 5, padding: '20px 32px 14px', borderBottom: '1px solid rgba(0,0,0,0.08)', borderRadius: '12px 12px 0 0', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, color: '#1e2035', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
+                👁️ Xem trước — giao diện hiển thị thực tế
+              </h3>
+            </div>
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px 32px' }}>
               {form.imageUrl && (
                 <img src={form.imageUrl} alt="" style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 10, marginBottom: 18 }}
                   onError={e => e.target.style.display = 'none'} />
@@ -824,7 +834,7 @@ export default function ArticlesTab({ token }) {
                     ) : <span style={{ fontSize: '1.2rem' }}>🖼️</span>}
                   </td>
                   <td><span className="admin-badge">{item.category}</span></td>
-                   <td title={item.title}>
+                  <td title={item.title}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <span style={{ fontWeight: 600 }}>{item.title}</span>
                       {item.isLatest && (
